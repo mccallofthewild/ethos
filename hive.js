@@ -19,9 +19,8 @@ class Hive {
     console.groupEnd()
   }
   static error(){
-    console.group(`%c HIVE.js 🐝 \t\t\t`, `font-size:16px; background-color:black; color:white; padding:5px; width:100%;`)
     console.error(...arguments);
-    console.error(`%c \t 🍯 \t 🍯 \t 🍯 \t `, `border-bottom:2px solid black; width:100%;`)
+    console.error(`%c \t !🍯 \t !🍯 \t !🍯 \t `, `border-bottom:2px solid black; width:100%;`)
     console.groupEnd()
   }
   get methodArgs(){
