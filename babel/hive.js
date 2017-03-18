@@ -1,5 +1,4 @@
-import $splice from './splice.polyfill.js'
-class Hive {
+ class Hive {
 
   constructor(store){
     Hive.intro()
@@ -41,51 +40,58 @@ class Hive {
       let result = _splice.apply(this, arguments)
       if(descriptor && descriptor.set && descriptor.set.name == "hiveSet"){
         let writeAll = !this.length;
-        myHive.updateListeners({writeAll})
+        if(!writeAll){
+          this[0] = this[0]
+        }else{
+          myHive.updateListeners({writeAll});
+        }
       }
       return result
     }
   }
 
-// Attaches Hive-specific setter to a property
+  // Attaches Hive-specific setter to a property
   defineBoth({obj, prop, rootProp}){
     let myHive = this;
     let val = obj[prop]
     // debugger
     if(Object.getOwnPropertyDescriptor(obj, prop).configurable){
 
+      Object.defineProperty(obj, prop, {
+        configurable:true,
+        set: function hiveSet(nextVal){
+          val = nextVal;
+          myHive.queue[rootProp] = true
+          // Hive.log("running setter for " + prop)
+          let holdForUpdate = (/(change|splice)/.test(arguments.callee.caller.name))
 
-          Object.defineProperty(obj, prop, {
-            configurable:true,
-            set: function hiveSet(nextVal){
-              val = nextVal;
-              myHive.queue[rootProp] = true
-              let descriptor = Object.getOwnPropertyDescriptor(obj, prop)
-              if(typeof val == "object" && !(descriptor && descriptor.set.name=="hiveSet")) myHive.deepListen({obj:val})
-              let holdForUpdate = (/(change|splice)/.test(arguments.callee.caller.name))
-              // debugger
-              if(!holdForUpdate) myHive.updateListeners()
-            },
-            get:function hiveGet(){
-              return val;
-            }
-          })
+          let descriptor = Object.getOwnPropertyDescriptor(obj, prop)
 
+          if(typeof val == "object" && (descriptor && descriptor.set.name=="hiveSet") && !holdForUpdate) (()=>{ 
+            let obj = val;
+            myHive.deepListen({obj}, rootProp);
+          })()
+
+          if(!holdForUpdate) myHive.updateListeners()
+        },
+        get:function hiveGet(){
+          return val;
+        }
+      })
 
     }
   }
 
   defineForEach(obj, cb, depth, rootProp){
     try{
-      cb = cb.bind(this) 
+      cb = cb.bind(this)
+      let isRoot = !rootProp;
       depth = depth || 0
       depth++
       if(depth>5) return;
       for(let prop in obj){
         let val = obj[prop]
-        if(depth==1){
-          rootProp = prop
-        }
+        rootProp = isRoot? prop : rootProp
         if(!!Object.getOwnPropertyDescriptor(obj, prop)){
           this.defineBoth({obj, prop, rootProp})
           if(typeof val == "object") cb(val, cb, depth, rootProp) // !Array.isArray(val) Doesn't listen to arrays... ? idk
@@ -97,8 +103,8 @@ class Hive {
     }
   }
 
-  deepListen({obj}){
-    this.defineForEach(obj, this.defineForEach);
+  deepListen({obj}, rootProp){
+    this.defineForEach(obj, this.defineForEach, 0, rootProp);
   }
 
   static intro(){
@@ -109,9 +115,7 @@ class Hive {
   }
   static log(){
     try{
-      console.group(`%c🍯 Hive Log`, `font-size:12px;`)
-      console.log(...arguments)
-      console.groupEnd()
+      console.log(`🍯 `, ...arguments)
     }catch(error){}
   }
   static error(){
@@ -129,7 +133,7 @@ class Hive {
       send: this.send.bind(this)
     }
   }
-
+  
   access(getter, payload){
     try{
       let res = this._getters[getter](this._state, payload)
@@ -140,19 +144,22 @@ class Hive {
   }
 
   change(setter, payload){
-    // debugger
       let res = this._setters[setter](this._state, payload, this.methodArgs)
-      // debugger
       this.updateListeners()
   }
 
   send(action, payload){
-    let res = this._actions[action](this.methodArgs, payload, this._state)
-    let update = this.updateListeners.bind(this)
-    update()
-    return res;
+    return new Promise((resolve, reject)=>{
+      let arg = {
+        resolve,
+        reject,
+        ...this.methodArgs,
+        state:this.state,
+      }
+      this._actions[action](arg, payload)
+    })
   }
-
+ 
   destroy(destroyer, payload){
     let res = this._destroyers[action](this.methodArgs, payload, this._state)
     myHive.updateListeners({writeAll})
@@ -192,6 +199,7 @@ class Hive {
 
   updateListeners(options={}){
     let {writeAll=false} = options
+
     for(let prop in this.listeners){
       let l = this.listeners[prop]
       if(l._mounted && l.state){
@@ -202,11 +210,12 @@ class Hive {
             futureState[propName] = this._state[stateProp]
           }
         }
+        Hive.log(futureState)
         if(!!Object.keys(futureState).length ){
-          Hive.log(l.constructor.name + " updating")
           if( l.beforeStateChange ) l.beforeStateChange()
           l.setState(futureState) // Only updates if there is something to update
-        } 
+          Hive.log(l.constructor.name + " updated")
+        }
       }
     }
     for(let prop in this.queue){
