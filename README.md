@@ -32,7 +32,7 @@ To implement it in your store:
 	export default new Hivex(store);
 ```
 Our data here is kind of pointless if we can't access it. Accessing Hivex state from a React Component is simple:
-``` babel 
+``` javascript 
 	// ./my-component.js
 	import store from './store.js'
 	export default class GoalSetter extends Component {
@@ -53,7 +53,7 @@ The second argument is always `this`.  It essentially tells Hivex to watch our c
 #### Setters
 This is great, but we should be able to change state too. In Hivex, state is mutated with setter functions.
 Defining setters isn't much different than defining state:
-``` babel
+``` javascript
 	// ./store.js
 	
 	import Hivex from 'hivex'
@@ -84,7 +84,7 @@ Defining setters isn't much different than defining state:
 ```
 `payload` is the object which contains all the data you would like to pass to your setter.
 To run a setter function, use the `change` method, which takes in the function name and its payload: 
-``` babel 
+``` javascript 
 	// ./my-component.js
 	import store from './store.js'
 	export default class GoalSetter extends Component {
@@ -113,7 +113,7 @@ Setters are great, but they update your components synchronously. This means if 
 To solve this problem, we have actions. Hivex actions handle all asynchronous activity in the store.
 
 Let's say you someone has to feed their dog, but not for another hour. We'll use a `setTimeout` to add this todo to the list in 45 minutes: 
-``` babel
+``` javascript
 	// ./store.js
 	
 	import Hivex from 'hivex'
