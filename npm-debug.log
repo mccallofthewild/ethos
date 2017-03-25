@@ -1,0 +1,266 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/local/Cellar/node/7.0.0/bin/node',
+1 verbose cli   '/usr/local/bin/npm',
+1 verbose cli   'publish' ]
+2 info using npm@3.10.8
+3 info using node@v7.0.0
+4 verbose publish [ '.' ]
+5 silly cache add args [ '.', null ]
+6 verbose cache add spec .
+7 silly cache add parsed spec Result {
+7 silly cache add   raw: '.',
+7 silly cache add   scope: null,
+7 silly cache add   escapedName: null,
+7 silly cache add   name: null,
+7 silly cache add   rawSpec: '.',
+7 silly cache add   spec: '/Users/mccallalexander/source/projects/hive',
+7 silly cache add   type: 'directory' }
+8 verbose addLocalDirectory /Users/mccallalexander/.npm/hivex/1.0.0/package.tgz not in flight; packing
+9 verbose correctMkdir /Users/mccallalexander/.npm correctMkdir not in flight; initializing
+10 info lifecycle hivex@1.0.0~prepublish: hivex@1.0.0
+11 silly lifecycle hivex@1.0.0~prepublish: no script for prepublish, continuing
+12 verbose tar pack [ '/Users/mccallalexander/.npm/hivex/1.0.0/package.tgz',
+12 verbose tar pack   '/Users/mccallalexander/source/projects/hive' ]
+13 verbose tarball /Users/mccallalexander/.npm/hivex/1.0.0/package.tgz
+14 verbose folder /Users/mccallalexander/source/projects/hive
+15 verbose addLocalTarball adding from inside cache /Users/mccallalexander/.npm/hivex/1.0.0/package.tgz
+16 verbose correctMkdir /Users/mccallalexander/.npm correctMkdir not in flight; initializing
+17 silly cache afterAdd hivex@1.0.0
+18 verbose afterAdd /Users/mccallalexander/.npm/hivex/1.0.0/package/package.json not in flight; writing
+19 verbose correctMkdir /Users/mccallalexander/.npm correctMkdir not in flight; initializing
+20 verbose afterAdd /Users/mccallalexander/.npm/hivex/1.0.0/package/package.json written
+21 silly publish { name: 'hivex',
+21 silly publish   version: '1.0.0',
+21 silly publish   description: 'React state management, for humans.',
+21 silly publish   main: 'index.js',
+21 silly publish   repository:
+21 silly publish    { url: 'git+https://github.com/mccallofthewild/hive.git',
+21 silly publish      type: 'git' },
+21 silly publish   author:
+21 silly publish    { name: 'McCall Alexander',
+21 silly publish      email: 'mccallalexander96@gmail.com' },
+21 silly publish   license: 'MIT',
+21 silly publish   devDependencies:
+21 silly publish    { 'babel-cli': '^6.24.0',
+21 silly publish      'babel-plugin-transform-object-rest-spread': '^6.23.0',
+21 silly publish      'babel-preset-es2015': '^6.24.0',
+21 silly publish      'babel-preset-stage-2': '^6.22.0' },
+21 silly publish   readme: '# hivex\n# hivex\n',
+21 silly publish   readmeFilename: 'README.md',
+21 silly publish   gitHead: '004a58e2f620cdc0171e2be5d66c825deb365f41',
+21 silly publish   bugs: { url: 'https://github.com/mccallofthewild/hive/issues' },
+21 silly publish   homepage: 'https://github.com/mccallofthewild/hive#readme',
+21 silly publish   _id: 'hivex@1.0.0',
+21 silly publish   scripts: {},
+21 silly publish   _shasum: 'bfa770d791458401c04a1fef7e50d134eef3b0b3',
+21 silly publish   _from: '.' }
+22 verbose getPublishConfig undefined
+23 silly mapToRegistry name hivex
+24 silly mapToRegistry using default registry
+25 silly mapToRegistry registry https://registry.npmjs.org/
+26 silly mapToRegistry data Result {
+26 silly mapToRegistry   raw: 'hivex',
+26 silly mapToRegistry   scope: null,
+26 silly mapToRegistry   escapedName: 'hivex',
+26 silly mapToRegistry   name: 'hivex',
+26 silly mapToRegistry   rawSpec: '',
+26 silly mapToRegistry   spec: 'latest',
+26 silly mapToRegistry   type: 'tag' }
+27 silly mapToRegistry uri https://registry.npmjs.org/hivex
+28 verbose publish registryBase https://registry.npmjs.org/
+29 silly publish uploading /Users/mccallalexander/.npm/hivex/1.0.0/package.tgz
+30 verbose request uri https://registry.npmjs.org/hivex
+31 verbose request sending authorization for write operation
+32 info attempt registry request try #1 at 2:12:16 PM
+33 verbose request using bearer token for auth
+34 verbose request id 9856775f381b2bf2
+35 http request PUT https://registry.npmjs.org/hivex
+36 http 503 https://registry.npmjs.org/hivex
+37 verbose bad json <?xml version="1.0" encoding="utf-8"?>
+37 verbose bad json <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+37 verbose bad json  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+37 verbose bad json <html>
+37 verbose bad json   <head>
+37 verbose bad json     <title>503 first byte timeout</title>
+37 verbose bad json   </head>
+37 verbose bad json   <body>
+37 verbose bad json     <h1>Error 503 first byte timeout</h1>
+37 verbose bad json     <p>first byte timeout</p>
+37 verbose bad json     <h3>Guru Mediation:</h3>
+37 verbose bad json     <p>Details: cache-sea1047-SEA 1490386367 1928058298</p>
+37 verbose bad json     <hr>
+37 verbose bad json     <p>Varnish cache server</p>
+37 verbose bad json   </body>
+37 verbose bad json </html>
+38 error registry error parsing json
+39 verbose headers { server: 'Varnish',
+39 verbose headers   'retry-after': '0',
+39 verbose headers   'content-type': 'text/html; charset=utf-8',
+39 verbose headers   'content-length': '448',
+39 verbose headers   'accept-ranges': 'bytes',
+39 verbose headers   date: 'Fri, 24 Mar 2017 20:12:47 GMT',
+39 verbose headers   via: '1.1 varnish',
+39 verbose headers   connection: 'close',
+39 verbose headers   'x-served-by': 'cache-sea1047-SEA',
+39 verbose headers   'x-cache': 'MISS',
+39 verbose headers   'x-cache-hits': '0',
+39 verbose headers   'x-timer': 'S1490386337.090195,VS0,VE30015' }
+40 info retry will retry, error on last attempt: SyntaxError: Unexpected token < in JSON at position 1
+40 info retry
+40 info retry <?xml version="1.0" encoding="utf-8"?>
+40 info retry <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+40 info retry  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+40 info retry <html>
+40 info retry   <head>
+40 info retry     <title>503 first byte timeout</title>
+40 info retry   </head>
+40 info retry   <body>
+40 info retry     <h1>Error 503 first byte timeout</h1>
+40 info retry     <p>first byte timeout</p>
+40 info retry     <h3>Guru Mediation:</h3>
+40 info retry     <p>Details: cache-sea1047-SEA 1490386367 1928058298</p>
+40 info retry     <hr>
+40 info retry     <p>Varnish cache server</p>
+40 info retry   </body>
+40 info retry </html>
+41 info attempt registry request try #2 at 2:12:57 PM
+42 verbose request using bearer token for auth
+43 http request PUT https://registry.npmjs.org/hivex
+44 http 503 https://registry.npmjs.org/hivex
+45 verbose bad json <?xml version="1.0" encoding="utf-8"?>
+45 verbose bad json <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+45 verbose bad json  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+45 verbose bad json <html>
+45 verbose bad json   <head>
+45 verbose bad json     <title>503 first byte timeout</title>
+45 verbose bad json   </head>
+45 verbose bad json   <body>
+45 verbose bad json     <h1>Error 503 first byte timeout</h1>
+45 verbose bad json     <p>first byte timeout</p>
+45 verbose bad json     <h3>Guru Mediation:</h3>
+45 verbose bad json     <p>Details: cache-sea1024-SEA 1490386407 213409169</p>
+45 verbose bad json     <hr>
+45 verbose bad json     <p>Varnish cache server</p>
+45 verbose bad json   </body>
+45 verbose bad json </html>
+46 error registry error parsing json
+47 verbose headers { server: 'Varnish',
+47 verbose headers   'retry-after': '0',
+47 verbose headers   'content-type': 'text/html; charset=utf-8',
+47 verbose headers   'content-length': '447',
+47 verbose headers   'accept-ranges': 'bytes',
+47 verbose headers   date: 'Fri, 24 Mar 2017 20:13:27 GMT',
+47 verbose headers   via: '1.1 varnish',
+47 verbose headers   connection: 'close',
+47 verbose headers   'x-served-by': 'cache-sea1024-SEA',
+47 verbose headers   'x-cache': 'MISS',
+47 verbose headers   'x-cache-hits': '0',
+47 verbose headers   'x-timer': 'S1490386377.503735,VS0,VE30013' }
+48 info retry will retry, error on last attempt: SyntaxError: Unexpected token < in JSON at position 1
+48 info retry
+48 info retry <?xml version="1.0" encoding="utf-8"?>
+48 info retry <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+48 info retry  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+48 info retry <html>
+48 info retry   <head>
+48 info retry     <title>503 first byte timeout</title>
+48 info retry   </head>
+48 info retry   <body>
+48 info retry     <h1>Error 503 first byte timeout</h1>
+48 info retry     <p>first byte timeout</p>
+48 info retry     <h3>Guru Mediation:</h3>
+48 info retry     <p>Details: cache-sea1024-SEA 1490386407 213409169</p>
+48 info retry     <hr>
+48 info retry     <p>Varnish cache server</p>
+48 info retry   </body>
+48 info retry </html>
+49 info attempt registry request try #3 at 2:14:27 PM
+50 verbose request using bearer token for auth
+51 http request PUT https://registry.npmjs.org/hivex
+52 http 503 https://registry.npmjs.org/hivex
+53 verbose bad json <?xml version="1.0" encoding="utf-8"?>
+53 verbose bad json <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+53 verbose bad json  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+53 verbose bad json <html>
+53 verbose bad json   <head>
+53 verbose bad json     <title>503 first byte timeout</title>
+53 verbose bad json   </head>
+53 verbose bad json   <body>
+53 verbose bad json     <h1>Error 503 first byte timeout</h1>
+53 verbose bad json     <p>first byte timeout</p>
+53 verbose bad json     <h3>Guru Mediation:</h3>
+53 verbose bad json     <p>Details: cache-sea1038-SEA 1490386498 651275747</p>
+53 verbose bad json     <hr>
+53 verbose bad json     <p>Varnish cache server</p>
+53 verbose bad json   </body>
+53 verbose bad json </html>
+54 error registry error parsing json
+55 verbose headers { server: 'Varnish',
+55 verbose headers   'retry-after': '0',
+55 verbose headers   'content-type': 'text/html; charset=utf-8',
+55 verbose headers   'content-length': '447',
+55 verbose headers   'accept-ranges': 'bytes',
+55 verbose headers   date: 'Fri, 24 Mar 2017 20:14:58 GMT',
+55 verbose headers   via: '1.1 varnish',
+55 verbose headers   connection: 'close',
+55 verbose headers   'x-served-by': 'cache-sea1038-SEA',
+55 verbose headers   'x-cache': 'MISS',
+55 verbose headers   'x-cache-hits': '0',
+55 verbose headers   'x-timer': 'S1490386468.300564,VS0,VE30016' }
+56 verbose request invalidating /Users/mccallalexander/.npm/registry.npmjs.org/hivex on PUT
+57 error publish Failed PUT 503
+58 verbose stack SyntaxError: Unexpected token < in JSON at position 1
+58 verbose stack
+58 verbose stack <?xml version="1.0" encoding="utf-8"?>
+58 verbose stack <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+58 verbose stack  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+58 verbose stack <html>
+58 verbose stack   <head>
+58 verbose stack     <title>503 first byte timeout</title>
+58 verbose stack   </head>
+58 verbose stack   <body>
+58 verbose stack     <h1>Error 503 first byte timeout</h1>
+58 verbose stack     <p>first byte timeout</p>
+58 verbose stack     <h3>Guru Mediation:</h3>
+58 verbose stack     <p>Details: cache-sea1038-SEA 1490386498 651275747</p>
+58 verbose stack     <hr>
+58 verbose stack     <p>Varnish cache server</p>
+58 verbose stack   </body>
+58 verbose stack </html>
+58 verbose stack
+58 verbose stack     at JSON.parse (<anonymous>)
+58 verbose stack     at CachingRegistryClient.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:237:23)
+58 verbose stack     at Request._callback (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:210:14)
+58 verbose stack     at Request.self.callback (/usr/local/lib/node_modules/npm/node_modules/request/request.js:187:22)
+58 verbose stack     at emitTwo (events.js:106:13)
+58 verbose stack     at Request.emit (events.js:191:7)
+58 verbose stack     at Request.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:1044:10)
+58 verbose stack     at emitOne (events.js:96:13)
+58 verbose stack     at Request.emit (events.js:188:7)
+58 verbose stack     at IncomingMessage.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:965:12)
+59 verbose cwd /Users/mccallalexander/source/projects/hive
+60 error Darwin 16.4.0
+61 error argv "/usr/local/Cellar/node/7.0.0/bin/node" "/usr/local/bin/npm" "publish"
+62 error node v7.0.0
+63 error npm  v3.10.8
+64 error Unexpected token < in JSON at position 1
+64 error
+64 error <?xml version="1.0" encoding="utf-8"?>
+64 error <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+64 error  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+64 error <html>
+64 error   <head>
+64 error     <title>503 first byte timeout</title>
+64 error   </head>
+64 error   <body>
+64 error     <h1>Error 503 first byte timeout</h1>
+64 error     <p>first byte timeout</p>
+64 error     <h3>Guru Mediation:</h3>
+64 error     <p>Details: cache-sea1038-SEA 1490386498 651275747</p>
+64 error     <hr>
+64 error     <p>Varnish cache server</p>
+64 error   </body>
+64 error </html>
+65 error If you need help, you may report this error at:
+65 error     <https://github.com/npm/npm/issues>
+66 verbose exit [ 1, true ]
