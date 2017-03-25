@@ -13,7 +13,7 @@
 #### State
 State is the most important property in the Hivex store. It holds all your data.
 To implement it in your store:
-``` babel
+``` javascript
 	// ./store.js
 	
 	import Hivex from 'hivex'
