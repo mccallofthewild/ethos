@@ -10,17 +10,19 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var Hive = function () {
-  function Hive(store) {
-    _classCallCheck(this, Hive);
+var Hivex = function () {
+  function Hivex(store) {
+    _classCallCheck(this, Hivex);
 
-    Hive.intro();
+    Hivex.intro();
     this._state = store.state;
     this._store = store;
     this.deepListen({ obj: this._state });
-    this.overwriteArrayMethods();
+    // this.overwriteArrayMethods()
 
     this._getters = store.getters;
     this._setters = store.setters;
@@ -28,13 +30,13 @@ var Hive = function () {
     this._actions = store.actions;
     this._computed = store.computed;
 
-    this.injectComputedProps();
+    // this.injectComputedProps()
 
     this.listeners = {};
     this.queue = {};
   }
 
-  _createClass(Hive, [{
+  _createClass(Hivex, [{
     key: "injectComputedProps",
     value: function injectComputedProps() {
       var computed = this._computed;
@@ -49,26 +51,31 @@ var Hive = function () {
   }, {
     key: "overwriteArrayMethods",
     value: function overwriteArrayMethods() {
-      var myHive = this;
+      var myHivex = this;
       var _splice = Array.prototype.splice;
       delete Array.prototype.splice;
       Array.prototype.splice = function splice() {
 
         var descriptor = Object.getOwnPropertyDescriptor(this, 0);
-        var result = _splice.apply(this, arguments);
-        if (descriptor && descriptor.set && descriptor.set.name == "hiveSet") {
+
+        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
+        var result = _splice.apply(this, args);
+        if (descriptor && descriptor.set && descriptor.set.name == "hivexSet") {
           var _writeAll = !this.length;
           if (!_writeAll) {
             this[0] = this[0];
           } else {
-            myHive.updateListeners({ writeAll: _writeAll });
+            myHivex.updateListeners({ writeAll: _writeAll });
           }
         }
         return result;
       };
     }
 
-    // Attaches Hive-specific setter to a property
+    // Attaches Hivex-specific setter to a property
 
   }, {
     key: "defineBoth",
@@ -77,29 +84,25 @@ var Hive = function () {
           prop = _ref.prop,
           rootProp = _ref.rootProp;
 
-      var myHive = this;
+      var myHivex = this;
       var val = obj[prop];
       // debugger
       if (Object.getOwnPropertyDescriptor(obj, prop).configurable) {
 
         Object.defineProperty(obj, prop, {
           configurable: true,
-          set: function hiveSet(nextVal) {
+          set: function hivexSet(nextVal) {
             val = nextVal;
-            myHive.queue[rootProp] = true;
-            // Hive.log("running setter for " + prop)
-            var holdForUpdate = /(change|splice)/.test(arguments.callee.caller.name);
-
+            myHivex.queue[rootProp] = true;
+            // Hivex.log("running setter for " + prop)
             var descriptor = Object.getOwnPropertyDescriptor(obj, prop);
 
-            if ((typeof val === "undefined" ? "undefined" : _typeof(val)) == "object" && descriptor && descriptor.set.name == "hiveSet" && !holdForUpdate) (function () {
+            if ((typeof val === "undefined" ? "undefined" : _typeof(val)) == "object" && descriptor && descriptor.set.name == "hivexSet") (function () {
               var obj = val;
-              myHive.deepListen({ obj: obj }, rootProp);
+              myHivex.deepListen({ obj: obj }, rootProp);
             })();
-
-            if (!holdForUpdate) myHive.updateListeners();
           },
-          get: function hiveGet() {
+          get: function hivexGet() {
             return val;
           }
         });
@@ -119,11 +122,11 @@ var Hive = function () {
           rootProp = isRoot ? prop : rootProp;
           if (!!Object.getOwnPropertyDescriptor(obj, prop)) {
             this.defineBoth({ obj: obj, prop: prop, rootProp: rootProp });
-            if ((typeof val === "undefined" ? "undefined" : _typeof(val)) == "object") cb(val, cb, depth, rootProp); // !Array.isArray(val) Doesn't listen to arrays... ? idk
+            if ((typeof val === "undefined" ? "undefined" : _typeof(val)) == "object" && !Array.isArray(val)) cb(val, cb, depth, rootProp); // !Array.isArray(val) Doesn't listen to arrays... ? idk
           }
         }
       } catch (error) {
-        Hive.error(error);
+        Hivex.error(error);
       }
     }
   }, {
@@ -135,12 +138,12 @@ var Hive = function () {
     }
   }, {
     key: "access",
-    value: function access(getter, payload) {
+    value: function access(getter) {
       try {
-        var res = this._getters[getter](this._state, payload);
+        var res = this._getters[getter](this._state);
         return res;
       } catch (error) {
-        Hive.error(error);
+        Hivex.error(error);
       }
     }
   }, {
@@ -154,6 +157,7 @@ var Hive = function () {
     value: function send(action, payload) {
       var _this = this;
 
+      var myHivex = this;
       return new Promise(function (resolve, reject) {
         var arg = _extends({
           resolve: resolve,
@@ -162,13 +166,24 @@ var Hive = function () {
           state: _this.state
         });
         _this._actions[action](arg, payload);
+      }).then(function () {
+        myHivex.updateListeners.apply(myHivex, _toConsumableArray(args));
+        var resolveArgs = args;
+        return new Promise(function (resolve, reject) {
+          try {
+            resolve.apply(undefined, _toConsumableArray(resolveArgs));
+          } catch (error) {
+            if (!reject) throw new Error(error);
+            reject(error);
+          }
+        });
       });
     }
   }, {
     key: "destroy",
     value: function destroy(destroyer, payload) {
       var res = this._destroyers[action](this.methodArgs, payload, this._state);
-      myHive.updateListeners({ writeAll: writeAll });
+      myHivex.updateListeners({ writeAll: writeAll });
     }
   }, {
     key: "listen",
@@ -185,7 +200,7 @@ var Hive = function () {
         try {
           mountFunc.bind(context)();
         } catch (error) {
-          Hive.error(error);
+          Hivex.error(error);
         }
         context.id = context.constructor.name + "/timestamp/" + Date.now() + "/id/" + Math.round(Math.random() * 10000000);
         context._mounted = true;
@@ -200,7 +215,7 @@ var Hive = function () {
           _this2.listeners[context.id]._mounted = false;
           context._mounted = false;
         } catch (error) {
-          Hive.error(error);
+          Hivex.error(error);
         }
         delete _this2.listeners[context.id];
       };
@@ -217,17 +232,17 @@ var Hive = function () {
         var l = this.listeners[prop];
         if (l._mounted && l.state) {
           var futureState = {};
-          for (var propName in l.hiveStateProps) {
-            var stateProp = l.hiveStateProps[propName];
+          for (var propName in l.hivexStateProps) {
+            var stateProp = l.hivexStateProps[propName];
             if (this.queue[stateProp] || writeAll) {
               futureState[propName] = this._state[stateProp];
             }
           }
-          Hive.log(futureState);
+          Hivex.log(futureState);
           if (!!Object.keys(futureState).length) {
             if (l.beforeStateChange) l.beforeStateChange();
             l.setState(futureState); // Only updates if there is something to update
-            Hive.log(l.constructor.name + " updated");
+            Hivex.log(l.constructor.name + " updated");
           }
         }
       }
@@ -237,11 +252,15 @@ var Hive = function () {
     }
   }, {
     key: "openState",
-    value: function openState(props) {
-      var context = arguments[arguments.length - 1];
+    value: function openState() {
+      var _ref3;
+
+      var props = arguments.length <= 0 ? undefined : arguments[0];
+      var context = (_ref3 = arguments.length - 1, arguments.length <= _ref3 ? undefined : arguments[_ref3]);
       if ((typeof props === "undefined" ? "undefined" : _typeof(props)) != "object") return;
       var obj = void 0;
       if (Array.isArray(props)) {
+        // if the first argument is an array, turn it into an object
         obj = {};
         props.forEach(function (a) {
           obj[a] = a;
@@ -249,7 +268,7 @@ var Hive = function () {
       } else {
         obj = props;
       }
-      context.hiveStateProps = obj;
+      context.hivexStateProps = obj;
       this.listen(context);
       var statePiece = {};
       for (var name in obj) {
@@ -282,7 +301,11 @@ var Hive = function () {
       try {
         var _console;
 
-        (_console = console).log.apply(_console, ["\uD83C\uDF6F "].concat(Array.prototype.slice.call(arguments)));
+        for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+          args[_key2] = arguments[_key2];
+        }
+
+        (_console = console).log.apply(_console, ["\uD83C\uDF6F "].concat(args));
       } catch (error) {}
     }
   }, {
@@ -291,27 +314,14 @@ var Hive = function () {
       try {
         var _console2;
 
-        console.group("%c\uD83C\uDF6F Hive Error", "font-size:12px;");
+        console.group("%c\uD83C\uDF6F Hivex Error", "font-size:12px;");
         (_console2 = console).error.apply(_console2, arguments);
         console.groupEnd();
       } catch (error) {}
     }
   }]);
 
-  return Hive;
+  return Hivex;
 }();
 
-exports.default = Hive;
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _hive = require('./hive');
-
-var _hive2 = _interopRequireDefault(_hive);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = _hive2.default;
+exports.default = Hivex;
