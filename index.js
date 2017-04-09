@@ -4,7 +4,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _hive = require('./build/hive.js');
+var _hive = require('./build/hivex.js');
 
 var _hive2 = _interopRequireDefault(_hive);
 

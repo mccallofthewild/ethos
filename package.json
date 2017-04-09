@@ -4,12 +4,18 @@
   "description": "React state management, for humans.",
   "main": "index.js",
   "repository": {
-    "url": "https://github.com/mccallofthewild/hive.git",
+    "url": "https://github.com/mccallofthewild/hivex.git",
     "type": "git"
   },
   "scripts":{
-    "compile":"babel babel/hive.js --out-file build/hive.js"
+    "build":"babel babel/hivex.js --out-file build/hivex.js"
   },
   "author": "McCall Alexander <mccallalexander96@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "babel-cli": "^6.24.0",
+    "babel-plugin-transform-object-rest-spread": "^6.23.0",
+    "babel-preset-es2015": "^6.24.0",
+    "babel-preset-stage-2": "^6.22.0"
+  }
 }

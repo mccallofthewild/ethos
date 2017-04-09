@@ -1,2 +1,2 @@
-import Hive from './hive';
-export default Hive;
+import Hivex from './hivex';
+export default Hivex;
