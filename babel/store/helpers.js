@@ -1,11 +1,19 @@
+import exceptions from './exceptions'
+
 function formatStateQuery(props) {
 	/*
+
 	  Formats array of state props into object with 
 		  {
 			[String displayKey]: String stateKey
 		  }
 	  if already object, leaves it alone.
+
 	*/
+
+	// Validates that first argument is either an object or an array
+	exceptions.validateStateQuery(props)
+
 	let formatted;
 	if (Array.isArray(props)) {
 		formatted = {}
@@ -33,13 +41,13 @@ function formatStatePieceForComponent(state, statePropDictionary) {
 	return statePiece;
 }
 
-function getChangedStateFromQuery(listener, state, queue) {
+function getStateUpdatesFromQuery(listener, state, queue) {
 
 	let futureState = {}
 
-	for (let propName in listener.hivexStateProps) {
+	for (let propName in listener.hivexStateKeys) {
 
-		let stateProp = listener.hivexStateProps[propName]
+		let stateProp = listener.hivexStateKeys[propName]
 
 		if (queue[stateProp]) {
 
@@ -109,7 +117,8 @@ function getModuleState({
 export default {
 	formatStatePieceForComponent,
 	formatStateQuery,
-	getFutureState,
+	getStateUpdatesFromQuery,
+	getModuleState,
 	clearObject,
 	SealedObject,
 }

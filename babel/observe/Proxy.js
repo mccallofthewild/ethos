@@ -1,9 +1,4 @@
 
-const handler = {
-  get: HivexGetter,
-	set: HivexSetter
-};
-
 const helpers = {
 
 	descriptorIsClean(descriptor){
@@ -32,6 +27,7 @@ class HivexProxy {
   `rootStateProp` is the property directly on state which `obj` is a child of.
     if `rootStateProp` is undefined, we can infer that the proxy is on state itself,
     and the property being accessed ( `prop` ) is in fact the `rootStateProp`.
+    When creating the initial Hivex `state` proxy, this should be `null`
   
   `cb` is the function that will be passed the `rootStateProp` every time a getter or
   setter is run. This was implemented to allow rootStateProps to be added to the queue.
@@ -41,28 +37,42 @@ class HivexProxy {
   constructor(obj, rootStateProp, cb){
     this.rootStateProp = rootStateProp;
 		this.cb = cb;
-    return new Proxy(obj, this.handler);
+
+    let {
+      HivexGetter, 
+      HivexSetter
+    } = this.handler;
+
+    return new Proxy(obj, {
+
+      get:HivexGetter,
+
+      set:HivexSetter
+
+    });
   }
 
   get handler(){
 
     let rootStateProp = this.rootStateProp;
 		let cb = this.cb;
-
+    let checkedForChildObject = false;
     return {
 
       HivexGetter(obj, prop) {
 
           let value = obj[prop]
 
-					rootStateProp = rootStateProp || prop;
+					let rootProp = rootStateProp || prop;
+          
 
           /* 
            - Check if proxy can be added, and add one if it can.
           */
 
-          if( helpers.canAddProxy(obj, prop, value) ){
-            obj[prop] = new HivexProxy(value, rootStateProp, cb)
+          if( !checkedForChildObject && helpers.canAddProxy(obj, prop, value) ){
+            checkedForChildObject = true;
+            obj[prop] = new HivexProxy(value, rootProp, cb)
           }
 
           return obj[prop]
@@ -71,11 +81,11 @@ class HivexProxy {
 
       HivexSetter(obj, prop, value){
 
-					rootStateProp = rootStateProp || prop;
+					let rootProp = rootStateProp || prop;
 
-          obj[prop] = (typeof value == "object")? new HivexProxy(value, rootStateProp, cb) : value;
+          obj[prop] = (typeof value == "object")? new HivexProxy(value, rootProp, cb) : value;
 
-					cb(rootStateProp)
+					cb(rootProp)
 
           return true;
 
@@ -87,3 +97,5 @@ class HivexProxy {
 
 
 }
+
+export default HivexProxy;
