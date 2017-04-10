@@ -1,19 +1,29 @@
-"use strict";
+'use strict';
 
 Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
+var _exceptions = require('./exceptions');
+
+var _exceptions2 = _interopRequireDefault(_exceptions);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function formatStateQuery(props) {
 	/*
-   Formats array of state props into object with 
+ 	  Formats array of state props into object with 
  	  {
  		[String displayKey]: String stateKey
  	  }
    if already object, leaves it alone.
- */
+ 	*/
+
+	// Validates that first argument is either an object or an array
+	_exceptions2.default.validateStateQuery(props);
+
 	var formatted = void 0;
 	if (Array.isArray(props)) {
 		formatted = {};
@@ -41,15 +51,15 @@ function formatStatePieceForComponent(state, statePropDictionary) {
 	return statePiece;
 }
 
-function getChangedStateFromQuery(listener, state, queue) {
+function getStateUpdatesFromQuery(listener, state, queue) {
 
 	var futureState = {};
 
-	for (var propName in listener.hivexStateProps) {
+	for (var propName in listener.hivexStateKeys) {
 
-		var stateProp = listener.hivexStateProps[propName];
+		var stateProp = listener.hivexStateKeys[propName];
 
-		if (queue[stateProp]) {
+		if (queue.has(stateProp)) {
 
 			futureState[propName] = state[stateProp];
 		}
@@ -72,7 +82,7 @@ var SealedObject = function SealedObject(obj) {
 			return target[prop];
 		},
 		set: function set(target, prop, value) {
-			throw new Error("Cannot mutate " + prop + " inside Hivex sealed object.");
+			throw new Error('Cannot mutate ' + prop + ' inside Hivex sealed object.');
 		}
 	});
 };
@@ -113,7 +123,8 @@ function getModuleState(_ref, store) {
 exports.default = {
 	formatStatePieceForComponent: formatStatePieceForComponent,
 	formatStateQuery: formatStateQuery,
-	getFutureState: getFutureState,
+	getStateUpdatesFromQuery: getStateUpdatesFromQuery,
+	getModuleState: getModuleState,
 	clearObject: clearObject,
 	SealedObject: SealedObject
 };

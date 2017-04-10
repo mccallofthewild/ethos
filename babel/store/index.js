@@ -101,7 +101,7 @@ class Store {
   updateListeners() {
 
     // if queue is empty, return.
-    if(!Object.keys(this.queue).length) return;
+    if(!this.queue.isPopulated) return;
 
     for (let listenerKey in this.listeners) {
 

@@ -49,7 +49,7 @@ function getStateUpdatesFromQuery(listener, state, queue) {
 
 		let stateProp = listener.hivexStateKeys[propName]
 
-		if (queue[stateProp]) {
+		if (queue.has(stateProp)) {
 
 			futureState[propName] = state[stateProp];
 

@@ -1,2 +1,2 @@
-import * as Hivex from './babel/hivex.js'
+let Hivex = require('./build/hivex.js')
 module.exports = Hivex

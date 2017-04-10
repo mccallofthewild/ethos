@@ -10,14 +10,15 @@ const helpers = {
 		return ( descriptor && !( descriptor.set && descriptor.set.name == "HivexSetter" ) )
 	},
 
-	canAddProxy(obj, prop, value){
+	canAddProxy(obj, prop){
+    let value = obj[prop]
 		let descriptor = Object.getOwnPropertyDescriptor(obj, prop);
 		return ( typeof value == "object" && helpers.descriptorIsClean(descriptor)) 
 	}
 
 }
 
-
+import Queue from '../store/queue.js'
 
 class HivexProxy {
 /*
@@ -56,23 +57,35 @@ class HivexProxy {
 
     let rootStateProp = this.rootStateProp;
 		let cb = this.cb;
-    let checkedForChildObject = false;
+    let checkedProps = new Queue();
     return {
 
       HivexGetter(obj, prop) {
 
-          let value = obj[prop]
 
 					let rootProp = rootStateProp || prop;
           
 
           /* 
            - Check if proxy can be added, and add one if it can.
+           - We only need to to this once because from this point on,
+            any changes will be tracked by HivexSetter, and we don't
+            need to proxy the value more than once.
+           - Because this is a Proxy for the entire object, and not 
+            just a getter for this specific object, we can't simply 
+            flip a boolean once and be done with it: there could be 
+            more object properties which need to be proxied.
           */
 
-          if( !checkedForChildObject && helpers.canAddProxy(obj, prop, value) ){
-            checkedForChildObject = true;
-            obj[prop] = new HivexProxy(value, rootProp, cb)
+          if( !checkedProps.has(prop) ){
+
+            checkedProps.add(prop)
+            let value = obj[prop]
+
+            if( helpers.canAddProxy(obj, prop, value) ){
+              obj[prop] = new HivexProxy(value, rootProp, cb)
+            }
+          
           }
 
           return obj[prop]
