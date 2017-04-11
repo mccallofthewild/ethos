@@ -2,33 +2,42 @@ import helpers, { SealedObject } from './helpers'
 import exceptions from './exceptions'
 import HivexProxy from '../observe/proxy'
 import Queue from './queue'
+
 class Store {
 
-  constructor(store) {
+  constructor({
+    state={},
+    getters={},
+    setters={},
+    actions={},
+    modules={},
+  }) {
 
     this.listeners = {}
     this.queue = new Queue()
-    /*
-     queue is formatted as
 
-      {
-        stateprop:true,
-        otherstateprop:true
+    const add = prop => this.queue.add(prop)
+
+    this._state = new HivexProxy(state, null, add)
+    this._getters = getters
+    this._setters = setters
+    this._actions = actions
+
+    function createModuleStores(modules){
+      for(let prop in modules){
+        modules[prop] = new Store(modules[prop]);
       }
-
-    */
-
-    let add = prop=> this.queue.add(prop)
-
-    this._state = new HivexProxy(store.state, null, add)
-    this._getters = store.getters
-    this._setters = store.setters
-    this._actions = store.actions
-    this._modules = store.modules
+      return modules;
+    }
+    this._modules = createModuleStores(modules)
 
   }
 
   get methodArgs() {
+    /*
+      Allows you to use object destructuring on methods
+      without losing scope of `this`
+    */
     return {
       access: this.access.bind(this),
       change: this.change.bind(this),
@@ -36,27 +45,50 @@ class Store {
     }
   }
 
-  access(getter) {
-    let res = this._getters[getter](this._state)
-    return res;
-  }
 
   change(setter, payload) {
-    let res = this._setters[setter](this._state, payload, this.methodArgs)
-    this.updateListeners()
-    return res;
+      let func = this._setters[setter]
+      if(!func){
+        throw new Error(`Setter with name "${setter}" does not exist.`)
+      }
+      let res = func(this._state, payload, this.methodArgs)
+      this.updateListeners()
+      return res;
+  }
+
+  access(getter) {
+      let func = this._getters[getter]
+      if(!func){
+        throw new Error(`Getter with name "${getter}" does not exist.`)
+      }
+      let res = func(this._state)
+      return res;
   }
 
   send(action, payload) {
-    let myHivex = this;
-    let arg = {
-      ...this.methodArgs,
-      state: this._state,
-      done() {
-        myHivex.updateListeners()
+      let myHivex = this;
+      let arg = {
+        ...this.methodArgs,
+        state: this._state,
+        done() {
+          myHivex.updateListeners()
+        }
       }
-    }
-    this._actions[action](arg, payload)
+      let func = this._actions[action]
+      if(!func){
+        throw new Error(`Action with name "${action}" does not exist.`)
+      }
+      let res = func(arg, payload)
+      return res;
+  }
+
+  module(moduleQuery){
+    /*
+      to give users access to a module,
+      good for when someone chooses to 
+      have modules, but not use openers
+    */
+    return helpers.moduleFromQuery(moduleQuery, this);
   }
 
   listen(component) {
@@ -125,26 +157,80 @@ class Store {
     this.queue.clear()
   }
 
+  openSetters(...args){
+    let myHivex = this;
+    let [moduleQuery, query, component] = helpers.parseOpenArgs(args)
+    
+    let module = helpers.moduleFromQuery(moduleQuery, this);
+
+    /*
+      If `module` is not the module we are currently in,
+      open its setters instead.
+    */
+
+    if( module !== this ) return module.openSetters(query, component)
+
+    // `formattedKeys` are the user-defined keys which alias properties on a hivex object 
+    let formattedKeys = helpers.formatObjectQuery(query)
+    
+    let setters = {}
+    for(let alias in formattedKeys){
+      let name = formattedKeys[alias]
+      setters[alias] = function(payload){
+        myHivex.change(name, payload)
+      }
+    }
+
+    Object.assign(component, setters)
+  }
+
+  openActions(...args){
+    let myHivex = this;
+    let [moduleQuery, query, component] = helpers.parseOpenArgs(args)
+
+    let module = helpers.moduleFromQuery(moduleQuery, this);
+
+    /*
+      If `module` is not the module we are currently in,
+      open its actions instead.
+    */
+    if( module !== this ) return module.openActions(query, component)
+
+    // `formattedKeys` are the user-defined keys which alias properties on a hivex object 
+    let formattedKeys = helpers.formatObjectQuery(query)
+    
+    let actions = {}
+    for(let alias in formattedKeys){
+      let name = formattedKeys[alias]
+      actions[alias] = function(payload){
+        module.send(name, payload)
+      }
+    }
+
+    Object.assign(component, actions)
+  }
 
   openState(...args) {
-    let [module, stateQuery, component] = [null, null, null]
-    if(typeof args[0] == "string"){
-      [module, stateQuery, component] = args
-    }else{
-      // defaults to blank module query (root store)
-      [module, stateQuery, component] = ["", ...args]
-    }
-    // 
 
+    let [moduleQuery, query, component] = helpers.parseOpenArgs(args)
 
-    // `listenerKeys` are the user-defined keys which alias properties on state 
-    let formattedlistenerKeys = helpers.formatStateQuery(stateQuery)
+    let module = helpers.moduleFromQuery(moduleQuery, this);
 
-    component.hivexStateKeys = formattedlistenerKeys;
+    /*
+      If `module` is not the module we are currently in,
+      open its state instead. The module's state will not
+      be reactive otherwise.
+    */
+    if( module !== this ) return module.openState(query, component)
+
+    // `formattedKeys` are the user-defined keys which alias properties on a hivex object 
+    let formattedKeys = helpers.formatObjectQuery(query)
+
+    component.hivexStateKeys = formattedKeys;
 
     this.listen(component)
 
-    return helpers.formatStatePieceForComponent(this._state, formattedlistenerKeys);
+    return helpers.formatObjectPieceForComponent(module._state, formattedKeys);
   }
 }
 

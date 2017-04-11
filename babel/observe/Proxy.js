@@ -44,6 +44,13 @@ class HivexProxy {
       HivexSetter
     } = this.handler;
 
+    /*
+      Why use a constructor/class at all if we just
+      return a different object anyway?
+      - There are other ways to do it, but an ES6 class
+        makes for clean code and gives the proxy closure.
+    */
+
     return new Proxy(obj, {
 
       get:HivexGetter,
@@ -68,13 +75,16 @@ class HivexProxy {
 
           /* 
            - Check if proxy can be added, and add one if it can.
+
            - We only need to to this once because from this point on,
             any changes will be tracked by HivexSetter, and we don't
             need to proxy the value more than once.
-           - Because this is a Proxy for the entire object, and not 
-            just a getter for this specific object, we can't simply 
-            flip a boolean once and be done with it: there could be 
-            more object properties which need to be proxied.
+
+           - * reason for queue * 
+              Because this is a Proxy for the entire object, and not 
+              just a getter for this specific property, we can't simply 
+              flip a boolean once and be done with it: there could be 
+              more object properties which need to be proxied.
           */
 
           if( !checkedProps.has(prop) ){
@@ -96,8 +106,16 @@ class HivexProxy {
 
 					let rootProp = rootStateProp || prop;
 
+          /*
+            If property is being set with a value
+            that is an object, we proxy it.
+            Otherwise, set the value as usual.
+          */
           obj[prop] = (typeof value == "object")? new HivexProxy(value, rootProp, cb) : value;
 
+          /*
+            Typically, cb will be the function adding the rootProp to the Store's queue
+          */
 					cb(rootProp)
 
           return true;

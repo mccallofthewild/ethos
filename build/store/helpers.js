@@ -4,25 +4,29 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
 var _exceptions = require('./exceptions');
 
 var _exceptions2 = _interopRequireDefault(_exceptions);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-function formatStateQuery(props) {
+function formatObjectQuery(props) {
 	/*
- 	  Formats array of state props into object with 
+ 	  Formats array of object props into object with 
  	  {
- 		[String displayKey]: String stateKey
+ 		[String aliasKey]: String actualKey
  	  }
-   if already object, leaves it alone.
+   if props is already an object, it leaves it alone.
  	*/
 
 	// Validates that first argument is either an object or an array
-	_exceptions2.default.validateStateQuery(props);
+	_exceptions2.default.validateObjectQuery(props);
 
 	var formatted = void 0;
 	if (Array.isArray(props)) {
@@ -36,19 +40,19 @@ function formatStateQuery(props) {
 	return formatted;
 }
 
-function formatStatePieceForComponent(state, statePropDictionary) {
+function formatObjectPieceForComponent(obj, propDictionary) {
 	/*
    Loops through keys in formatted props passed to `openState`
    and uses their values, the actual `state` properties,
    to return a chunk of state with custom keys.
  */
-	var statePiece = {};
-	for (var name in statePropDictionary) {
-		var stateProp = statePropDictionary[name];
-		var value = state[stateProp];
-		statePiece[name] = value;
+	var piece = {};
+	for (var name in propDictionary) {
+		var prop = propDictionary[name];
+		var value = obj[prop];
+		piece[name] = value;
 	}
-	return statePiece;
+	return piece;
 }
 
 function getStateUpdatesFromQuery(listener, state, queue) {
@@ -104,6 +108,7 @@ function moduleFromQuery(moduleQuery, store) {
 	while (!!moduleQuery.length && i < moduleNames.length) {
 		var name = moduleNames[i];
 		module = module._modules[name];
+		if (!module) throw new Error('Hivex Store module with name "' + name + '" could not be found!');
 		i++;
 	}
 
@@ -117,14 +122,50 @@ function getModuleState(_ref, store) {
 	    component = _ref.component;
 
 	var module = moduleFromQuery(moduleQuery, store);
-	var formattedQuery = formatStateQuery(stateQuery);
+	var formattedQuery = formatObjectQuery(stateQuery);
+}
+
+function parseOpenArgs(args) {
+	/*
+ 	- The purpose of this function is to
+ 		take in an array of arguments passed to 
+ 		an open function ( `openState`, `openActions`, etc.)
+ 		and return an array of three items depicting
+ 		the requested module, the query, and the component
+ 		respectively.
+ */
+	var module = null,
+	    query = null,
+	    component = null;
+
+	// if module is root module, first argument can be query.
+
+	if (typeof args[0] == "string") {
+		var _args = _slicedToArray(args, 3);
+
+		module = _args[0];
+		query = _args[1];
+		component = _args[2];
+	} else {
+		var _ref2 = [""].concat(_toConsumableArray(args));
+
+		// defaults to blank module query (root store)
+
+
+		module = _ref2[0];
+		query = _ref2[1];
+		component = _ref2[2];
+	}
+	return [module, query, component];
 }
 
 exports.default = {
-	formatStatePieceForComponent: formatStatePieceForComponent,
-	formatStateQuery: formatStateQuery,
+	formatObjectPieceForComponent: formatObjectPieceForComponent,
+	formatObjectQuery: formatObjectQuery,
 	getStateUpdatesFromQuery: getStateUpdatesFromQuery,
 	getModuleState: getModuleState,
+	moduleFromQuery: moduleFromQuery,
 	clearObject: clearObject,
-	SealedObject: SealedObject
+	SealedObject: SealedObject,
+	parseOpenArgs: parseOpenArgs
 };

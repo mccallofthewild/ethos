@@ -1,18 +1,18 @@
 import exceptions from './exceptions'
 
-function formatStateQuery(props) {
+function formatObjectQuery(props) {
 	/*
 
-	  Formats array of state props into object with 
+	  Formats array of object props into object with 
 		  {
-			[String displayKey]: String stateKey
+			[String aliasKey]: String actualKey
 		  }
-	  if already object, leaves it alone.
+	  if props is already an object, it leaves it alone.
 
 	*/
 
 	// Validates that first argument is either an object or an array
-	exceptions.validateStateQuery(props)
+	exceptions.validateObjectQuery(props)
 
 	let formatted;
 	if (Array.isArray(props)) {
@@ -26,19 +26,19 @@ function formatStateQuery(props) {
 	return formatted;
 }
 
-function formatStatePieceForComponent(state, statePropDictionary) {
+function formatObjectPieceForComponent(obj, propDictionary) {
 	/*
 	  Loops through keys in formatted props passed to `openState`
 	  and uses their values, the actual `state` properties,
 	  to return a chunk of state with custom keys.
 	*/
-	let statePiece = {}
-	for (let name in statePropDictionary) {
-		let stateProp = statePropDictionary[name]
-		let value = state[stateProp]
-		statePiece[name] = value
+	let piece = {}
+	for (let name in propDictionary) {
+		let prop = propDictionary[name]
+		let value = obj[prop]
+		piece[name] = value
 	}
-	return statePiece;
+	return piece;
 }
 
 function getStateUpdatesFromQuery(listener, state, queue) {
@@ -98,6 +98,7 @@ function moduleFromQuery(moduleQuery, store){
 	while(!!moduleQuery.length && i<moduleNames.length){
 		let name = moduleNames[i]
 		module = module._modules[name]
+		if(!module) throw new Error(`Hivex Store module with name "${name}" could not be found!`)
 		i++;
 	}
 
@@ -111,14 +112,45 @@ function getModuleState({
 	component,
 }, store){
 	let module = moduleFromQuery(moduleQuery, store);
-	let formattedQuery = formatStateQuery(stateQuery);
+	let formattedQuery = formatObjectQuery(stateQuery);
+}
+
+function parseOpenArgs(args){
+		/*
+			- The purpose of this function is to
+				take in an array of arguments passed to 
+				an open function ( `openState`, `openActions`, etc.)
+				and return an array of three items depicting
+				the requested module, the query, and the component
+				respectively.
+		*/
+		let [module, query, component] = [null, null, null]
+
+		// if module is root module, first argument can be query.
+		if(typeof args[0] == "string"){
+
+			[module, query, component] = args
+
+		}else{
+
+			// defaults to blank module query (root store)
+			[module, query, component] = ["", ...args]
+
+		}
+		return [
+			module, 
+			query, 
+			component
+		]
 }
 
 export default {
-	formatStatePieceForComponent,
-	formatStateQuery,
+	formatObjectPieceForComponent,
+	formatObjectQuery,
 	getStateUpdatesFromQuery,
 	getModuleState,
+	moduleFromQuery,
 	clearObject,
 	SealedObject,
+	parseOpenArgs,
 }
