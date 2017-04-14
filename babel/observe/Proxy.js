@@ -14,7 +14,7 @@ const helpers = {
     let value = obj[prop]
 		let descriptor = Object.getOwnPropertyDescriptor(obj, prop);
 		return ( typeof value == "object" && helpers.descriptorIsClean(descriptor)) 
-	}
+	} 
 
 }
 
@@ -35,9 +35,18 @@ class HivexProxy {
 
 */
 
-  constructor(obj, rootStateProp, cb){
+  /**
+   * Creates an instance of HivexProxy.
+   * @param {Object} obj - object to proxy
+   * @param {String} rootStateProp - most 
+   * @param {any} {getterCb, setterCb} 
+   * 
+   * @memberOf HivexProxy
+   */
+  constructor(obj, rootStateProp, {getterCb, setterCb}){
     this.rootStateProp = rootStateProp;
-		this.cb = cb;
+		this.setterCb = setterCb;
+    this.getterCb = getterCb;
 
     let {
       HivexGetter, 
@@ -63,10 +72,20 @@ class HivexProxy {
   get handler(){
 
     let rootStateProp = this.rootStateProp;
-		let cb = this.cb;
+    let getterCb = this.getterCb;
+		let setterCb = this.setterCb;
+    
     let checkedProps = new Queue();
     return {
 
+      /**
+       * 
+       * 
+       * @param {Object} obj - The target of the proxy; Though they are in different scopes, 
+       * this will be the same as the @param obj above.
+       * @param {String} prop the property being accessed on @param obj
+       * @returns @prop obj[prop]
+       */
       HivexGetter(obj, prop) {
 
 
@@ -93,15 +112,32 @@ class HivexProxy {
             let value = obj[prop]
 
             if( helpers.canAddProxy(obj, prop, value) ){
-              obj[prop] = new HivexProxy(value, rootProp, cb)
+              obj[prop] = new HivexProxy(value, rootProp, {getterCb, setterCb})
             }
           
           }
+
+          /*
+            The general purpose of this is to
+            pass `rootProp` up to the store to 
+            find out which properties a `computed`
+            value in the store requires
+          */
+
+          getterCb(rootProp)
 
           return obj[prop]
 
       },
 
+      /**
+       * 
+       * 
+       * @param {Object} obj 
+       * @param {String} prop 
+       * @param {any} value 
+       * @returns true
+       */
       HivexSetter(obj, prop, value){
 
 					let rootProp = rootStateProp || prop;
@@ -111,12 +147,12 @@ class HivexProxy {
             that is an object, we proxy it.
             Otherwise, set the value as usual.
           */
-          obj[prop] = (typeof value == "object")? new HivexProxy(value, rootProp, cb) : value;
+          obj[prop] = (typeof value == "object")? new HivexProxy(value, rootProp, {getterCb, setterCb}) : value;
 
           /*
             Typically, cb will be the function adding the rootProp to the Store's queue
           */
-					cb(rootProp)
+					setterCb(rootProp)
 
           return true;
 

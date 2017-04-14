@@ -9,15 +9,18 @@
   },
   "scripts": {
     "build": "babel babel --out-dir build",
-    "create": "nodemon --watch ./babel/  --exec \"npm run build\" "
+    "prepublish": "yarn run build",
+    "dev": "nodemon --watch ./babel/  --exec \"yarn run flow && yarn run build\" "
   },
   "author": "McCall Alexander <mccallalexander96@gmail.com>",
   "license": "MIT",
   "devDependencies": {
-    "babel-cli": "^6.24.0",
+    "babel-cli": "^6.24.1",
     "babel-plugin-transform-object-rest-spread": "^6.23.0",
     "babel-preset-es2015": "^6.24.0",
+    "babel-preset-flow": "^6.23.0",
     "babel-preset-stage-2": "^6.22.0",
+    "flow-bin": "^0.44.0",
     "nodemon": "^1.11.0"
   },
   "dependencies": {

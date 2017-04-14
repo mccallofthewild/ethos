@@ -26,6 +26,14 @@ var _queue = require('./queue');
 
 var _queue2 = _interopRequireDefault(_queue);
 
+var _computed = require('./computed');
+
+var _computed2 = _interopRequireDefault(_computed);
+
+var _setdictionary = require('./setdictionary');
+
+var _setdictionary2 = _interopRequireDefault(_setdictionary);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -43,29 +51,62 @@ var Store = function () {
         _ref$actions = _ref.actions,
         actions = _ref$actions === undefined ? {} : _ref$actions,
         _ref$modules = _ref.modules,
-        modules = _ref$modules === undefined ? {} : _ref$modules;
+        modules = _ref$modules === undefined ? {} : _ref$modules,
+        _ref$computed = _ref.computed,
+        computed = _ref$computed === undefined ? {} : _ref$computed,
+        _ref$start = _ref.start,
+        start = _ref$start === undefined ? null : _ref$start;
 
     _classCallCheck(this, Store);
 
     this.listeners = {};
     this.queue = new _queue2.default();
 
-    var add = function add(prop) {
+    var setterCb = function setterCb(prop) {
       return _this.queue.add(prop);
     };
 
-    this._state = new _proxy2.default(state, null, add);
+    var computedQueue = new _queue2.default();
+
+    var getterCb = function getterCb(prop) {
+      return computedQueue.add(prop);
+    };
+
+    this._state = new _proxy2.default(state, null, { getterCb: getterCb, setterCb: setterCb });
     this._getters = getters;
     this._setters = setters;
     this._actions = actions;
 
-    function createModuleStores(modules) {
-      for (var prop in modules) {
-        modules[prop] = new Store(modules[prop]);
-      }
-      return modules;
-    }
-    this._modules = createModuleStores(modules);
+    this.computedDict = new _setdictionary2.default();
+
+    _helpers2.default.objectForEach(computed, function (func, name) {
+      /*
+        The constructor saves itself in the dictionary,
+        so while it may seem strange, it's unnecessary to
+        assign the object to anything.
+          REFACTOR THIS YOU WROTE IT AT 3AM AND IT'S SHIT CODE. THIS IS A GOOD PROJECT. DON'T WRITE SHIT CODE IN IT!
+              IN FACT, REFACTOR THE ENTIRE COMPUTED & SETDICTIONARY THING. IT'S ALL QUESTIONABLE.
+              
+      */
+      new _computed2.default({
+        getter: func,
+        name: name,
+        queue: computedQueue,
+        state: _this._state,
+        dictionary: computedDict
+      });
+    });
+
+    _helpers2.default.objectForEach(modules, function (module, prop) {
+      _this._modules[prop] = new Store(module);
+    });
+
+    /*
+      `start` is a function that runs when the Store
+      is first constructed. It is passed the Hivex
+      methods
+    */
+    if (start && typeof start == 'function') start(this.methodArgs);
   }
 
   _createClass(Store, [{

@@ -68,19 +68,6 @@ function clearObject(obj){
 	}
 }
 
-class SealedObject{
-	constructor(obj){
-		return new Proxy(obj, {
-			get(target, prop){
-				return target[prop]
-			},
-			set(target, prop, value){
-				throw new Error(`Cannot mutate ${prop} inside Hivex sealed object.`)
-			}
-		})
-	}
-}
-
 function moduleFromQuery(moduleQuery, store){
 
 	/*
@@ -144,6 +131,13 @@ function parseOpenArgs(args){
 		]
 }
 
+function objectForEach(obj, cb){
+	for(let prop in obj){
+		let val = obj[prop]
+		cb(val, prop)
+	}
+}
+
 export default {
 	formatObjectPieceForComponent,
 	formatObjectQuery,
@@ -151,6 +145,6 @@ export default {
 	getModuleState,
 	moduleFromQuery,
 	clearObject,
-	SealedObject,
 	parseOpenArgs,
+	objectForEach,
 }

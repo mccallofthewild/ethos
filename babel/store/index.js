@@ -1,7 +1,9 @@
-import helpers, { SealedObject } from './helpers'
+import helpers from './helpers'
 import exceptions from './exceptions'
 import HivexProxy from '../observe/proxy'
 import Queue from './queue'
+import Computed from './computed'
+import SetDictionary from './setdictionary'
 
 class Store {
 
@@ -11,25 +13,68 @@ class Store {
     setters={},
     actions={},
     modules={},
+    computed={},
+    start=null,
   }) {
 
     this.listeners = {}
     this.queue = new Queue()
 
-    const add = prop => this.queue.add(prop)
+    const setterCb = prop => this.queue.add(prop)
 
-    this._state = new HivexProxy(state, null, add)
+    let computedQueue = new Queue()
+
+    const getterCb = prop => computedQueue.add(prop)
+
+    this._state = new HivexProxy(state, null, {getterCb, setterCb})
     this._getters = getters
     this._setters = setters
     this._actions = actions
 
-    function createModuleStores(modules){
-      for(let prop in modules){
-        modules[prop] = new Store(modules[prop]);
-      }
-      return modules;
-    }
-    this._modules = createModuleStores(modules)
+    this.computedDict = new SetDictionary()
+
+    helpers.objectForEach(computed, (func, name)=>{
+      /*
+        The constructor saves itself in the dictionary,
+        so while it may seem strange, it's unnecessary to
+        assign the object to anything.
+
+
+        REFACTOR THIS YOU WROTE IT AT 3AM AND IT'S SHIT CODE. THIS IS A GOOD PROJECT. DON'T WRITE SHIT CODE IN IT!
+
+
+
+
+
+
+        IN FACT, REFACTOR THE ENTIRE COMPUTED & SETDICTIONARY THING. IT'S ALL QUESTIONABLE.
+
+
+
+
+
+
+        
+      */
+      new Computed({
+          getter:func,
+          name,
+          queue:computedQueue,
+          state:this._state,
+          dictionary:computedDict
+      })
+    })
+
+    helpers.objectForEach(modules, (module, prop)=>{
+      this._modules[prop] = new Store(module)
+    })
+
+    /*
+      `start` is a function that runs when the Store
+      is first constructed. It is passed the Hivex
+      methods
+    */
+    if(start && typeof start == 'function') start(this.methodArgs)
 
   }
 

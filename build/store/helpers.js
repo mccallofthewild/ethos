@@ -14,8 +14,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 function formatObjectQuery(props) {
 	/*
  	  Formats array of object props into object with 
@@ -77,19 +75,6 @@ function clearObject(obj) {
 		delete obj[prop];
 	}
 }
-
-var SealedObject = function SealedObject(obj) {
-	_classCallCheck(this, SealedObject);
-
-	return new Proxy(obj, {
-		get: function get(target, prop) {
-			return target[prop];
-		},
-		set: function set(target, prop, value) {
-			throw new Error('Cannot mutate ' + prop + ' inside Hivex sealed object.');
-		}
-	});
-};
 
 function moduleFromQuery(moduleQuery, store) {
 
@@ -159,6 +144,13 @@ function parseOpenArgs(args) {
 	return [module, query, component];
 }
 
+function objectForEach(obj, cb) {
+	for (var prop in obj) {
+		var val = obj[prop];
+		cb(val, prop);
+	}
+}
+
 exports.default = {
 	formatObjectPieceForComponent: formatObjectPieceForComponent,
 	formatObjectQuery: formatObjectQuery,
@@ -166,6 +158,6 @@ exports.default = {
 	getModuleState: getModuleState,
 	moduleFromQuery: moduleFromQuery,
 	clearObject: clearObject,
-	SealedObject: SealedObject,
-	parseOpenArgs: parseOpenArgs
+	parseOpenArgs: parseOpenArgs,
+	objectForEach: objectForEach
 };
