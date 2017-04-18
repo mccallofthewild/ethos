@@ -43,7 +43,9 @@ class Store {
     this.listeners = {}
     this.queue = new Queue()
 
-    const setterCb = prop => this.queue.add(prop)
+    const setterCb = prop =>{
+      this.queue.add(prop)
+    }
 
     let computedQueue = new Queue()
  
@@ -54,6 +56,11 @@ class Store {
     this._getters = getters
     this._setters = setters
     this._actions = actions
+
+    helpers.objectForEach(modules, (module, prop)=>{
+      modules[prop] = new Store(module)
+    })
+
     this._modules = modules
 
     this.computedDictionary = new SetDictionary();
@@ -71,10 +78,6 @@ class Store {
           destination:this._state,
           dictionary:this.computedDictionary
       })
-    })
-
-    helpers.objectForEach(modules, (module, prop)=>{
-      this._modules[prop] = new Store(module)
     })
 
     /*
@@ -157,7 +160,8 @@ class Store {
 
     component.componentDidMount = (...args) => {
       try {
-        if (mountFunc) mountFunc.bind(component)(...args)
+        if (mountFunc) mountFunc.apply(component, args)
+        
       } catch (error) {
         HivexConsole.error(error)
       }
@@ -193,7 +197,6 @@ class Store {
       let listener = this.listeners[listenerKey]
 
       if (listener._hivex_mounted && listener.state) {
-        console.log("COOOL ")
 
         let futureState = helpers.getStateUpdatesFromQuery(listener, this._state, this.queue, this.computedDictionary)
 
@@ -202,12 +205,10 @@ class Store {
           (update listener)
         */
 
-        console.log(futureState)
         if (helpers.hasAProperty(futureState)) {
           // listener.setState(futureState)
           Object.assign(listener.state, futureState)
           listener.forceUpdate.call(listener)
-          console.log('updatingslfjklf')
         }
       }
     }
@@ -284,7 +285,10 @@ class Store {
     // `formattedKeys` are the user-defined keys which alias properties on a hivex object 
     let formattedKeys = helpers.formatObjectQuery(query)
 
-    component.hivexStateKeys = formattedKeys;
+    if(component.hivexStateKeys){
+      Object.assign(component.hivexStateKeys, formattedKeys)
+    }
+    else component.hivexStateKeys = formattedKeys;
 
     this.listen(component)
 

@@ -68,7 +68,7 @@ var Store = function () {
     this.queue = new _queue2.default();
 
     var setterCb = function setterCb(prop) {
-      return _this.queue.add(prop);
+      _this.queue.add(prop);
     };
 
     var computedQueue = new _queue2.default();
@@ -80,6 +80,11 @@ var Store = function () {
     this._getters = getters;
     this._setters = setters;
     this._actions = actions;
+
+    helpers.objectForEach(modules, function (module, prop) {
+      modules[prop] = new Store(module);
+    });
+
     this._modules = modules;
 
     this.computedDictionary = new _setdictionary2.default();
@@ -97,10 +102,6 @@ var Store = function () {
         destination: _this._state,
         dictionary: _this.computedDictionary
       });
-    });
-
-    helpers.objectForEach(modules, function (module, prop) {
-      _this._modules[prop] = new Store(module);
     });
 
     /*
@@ -172,8 +173,12 @@ var Store = function () {
       var idKey = "_hivex_id";
 
       component.componentDidMount = function () {
+        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
         try {
-          if (mountFunc) mountFunc.bind(component).apply(undefined, arguments);
+          if (mountFunc) mountFunc.apply(component, args);
         } catch (error) {
           _console2.default.error(error);
         }
@@ -208,7 +213,6 @@ var Store = function () {
         var listener = this.listeners[listenerKey];
 
         if (listener._hivex_mounted && listener.state) {
-          console.log("COOOL ");
 
           var futureState = helpers.getStateUpdatesFromQuery(listener, this._state, this.queue, this.computedDictionary);
 
@@ -217,12 +221,10 @@ var Store = function () {
             (update listener)
           */
 
-          console.log(futureState);
           if (helpers.hasAProperty(futureState)) {
             // listener.setState(futureState)
             Object.assign(listener.state, futureState);
             listener.forceUpdate.call(listener);
-            console.log('updatingslfjklf');
           }
         }
       }
@@ -234,8 +236,8 @@ var Store = function () {
     value: function openSetters() {
       var myHivex = this;
 
-      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-        args[_key] = arguments[_key];
+      for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+        args[_key2] = arguments[_key2];
       }
 
       var _helpers$parseOpenArg = helpers.parseOpenArgs(args),
@@ -276,8 +278,8 @@ var Store = function () {
     value: function openActions() {
       var myHivex = this;
 
-      for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-        args[_key2] = arguments[_key2];
+      for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+        args[_key3] = arguments[_key3];
       }
 
       var _helpers$parseOpenArg3 = helpers.parseOpenArgs(args),
@@ -315,8 +317,8 @@ var Store = function () {
   }, {
     key: 'openState',
     value: function openState() {
-      for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-        args[_key3] = arguments[_key3];
+      for (var _len4 = arguments.length, args = Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+        args[_key4] = arguments[_key4];
       }
 
       var _helpers$parseOpenArg5 = helpers.parseOpenArgs(args),
@@ -337,7 +339,9 @@ var Store = function () {
       // `formattedKeys` are the user-defined keys which alias properties on a hivex object 
       var formattedKeys = helpers.formatObjectQuery(query);
 
-      component.hivexStateKeys = formattedKeys;
+      if (component.hivexStateKeys) {
+        Object.assign(component.hivexStateKeys, formattedKeys);
+      } else component.hivexStateKeys = formattedKeys;
 
       this.listen(component);
 

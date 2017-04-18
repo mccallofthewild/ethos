@@ -97,8 +97,6 @@ function getStateUpdatesFromQuery(listener, state, queue, computedDictionary) {
 
 		if (queue.has(stateProp)) {
 
-			console.log(queue);
-
 			if (computedDictionary.has(stateProp)) {
 				// Too intertwined/assumes too much knowledge of each other. Refactor.
 				updateAllComputedInSet(computedDictionary.access(stateProp));

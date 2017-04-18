@@ -71,9 +71,7 @@ function getStateUpdatesFromQuery(listener:Object, state:Object, queue:Queue, co
 		let stateProp = listener.hivexStateKeys[propName]
 
 		if (queue.has(stateProp)) {
-				
-				console.log(queue)
-				
+							
 				if(computedDictionary.has(stateProp)){
 					// Too intertwined/assumes too much knowledge of each other. Refactor.
 					updateAllComputedInSet( computedDictionary.access(stateProp) )
