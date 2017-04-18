@@ -3,12 +3,29 @@
 Object.defineProperty(exports, "__esModule", {
 	value: true
 });
+exports.hasAProperty = exports.objectForEach = exports.parseOpenArgs = exports.clearObject = exports.moduleFromQuery = exports.getModuleState = exports.getStateUpdatesFromQuery = exports.formatObjectQuery = exports.formatObjectPieceForComponent = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var _exceptions = require('./exceptions');
 
 var _exceptions2 = _interopRequireDefault(_exceptions);
+
+var _queue = require('./queue');
+
+var _queue2 = _interopRequireDefault(_queue);
+
+var _index = require('./index');
+
+var _index2 = _interopRequireDefault(_index);
+
+var _setdictionary = require('./setdictionary');
+
+var _setdictionary2 = _interopRequireDefault(_setdictionary);
+
+var _computed = require('./computed');
+
+var _computed2 = _interopRequireDefault(_computed);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -53,7 +70,24 @@ function formatObjectPieceForComponent(obj, propDictionary) {
 	return piece;
 }
 
-function getStateUpdatesFromQuery(listener, state, queue) {
+function updateAllComputedInSet(computedDictionary) {
+	computedDictionary.forEach(function (c) {
+		return c.update();
+	});
+}
+
+/**
+ * 
+ * 
+ * @param {Object} listener 
+ * @param {Object} state 
+ * @param {Queue} queue 
+ * @param {SetDictionary<Computed>} computedDictionary 
+ * @returns {Object} 
+ * 
+ * 
+ */
+function getStateUpdatesFromQuery(listener, state, queue, computedDictionary) {
 
 	var futureState = {};
 
@@ -62,6 +96,16 @@ function getStateUpdatesFromQuery(listener, state, queue) {
 		var stateProp = listener.hivexStateKeys[propName];
 
 		if (queue.has(stateProp)) {
+
+			console.log(queue);
+			if (stateProp == "todos" || propName == "todos") {
+				console.log(stateProp);
+				console.log("BONZNNANANNANANNA");
+			}
+			if (computedDictionary.has(stateProp)) {
+				// Too intertwined/assumes too much knowledge of each other. Refactor.
+				updateAllComputedInSet(computedDictionary.access(stateProp));
+			}
 
 			futureState[propName] = state[stateProp];
 		}
@@ -151,13 +195,21 @@ function objectForEach(obj, cb) {
 	}
 }
 
-exports.default = {
-	formatObjectPieceForComponent: formatObjectPieceForComponent,
-	formatObjectQuery: formatObjectQuery,
-	getStateUpdatesFromQuery: getStateUpdatesFromQuery,
-	getModuleState: getModuleState,
-	moduleFromQuery: moduleFromQuery,
-	clearObject: clearObject,
-	parseOpenArgs: parseOpenArgs,
-	objectForEach: objectForEach
-};
+function hasAProperty(obj) {
+	var result = false;
+	for (var prop in obj) {
+		result = true;
+		break;
+	}
+	return result;
+}
+
+exports.formatObjectPieceForComponent = formatObjectPieceForComponent;
+exports.formatObjectQuery = formatObjectQuery;
+exports.getStateUpdatesFromQuery = getStateUpdatesFromQuery;
+exports.getModuleState = getModuleState;
+exports.moduleFromQuery = moduleFromQuery;
+exports.clearObject = clearObject;
+exports.parseOpenArgs = parseOpenArgs;
+exports.objectForEach = objectForEach;
+exports.hasAProperty = hasAProperty;

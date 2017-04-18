@@ -3,10 +3,16 @@ import {
   objectForEach, 
 } from './helpers'
 
+type listenerType = {
+  id:number,
+  cb:(any)=>any,
+}
+
+
 class Queue {
   
-  container:Object;
-  listeners:Object;
+  container:{ [string]:true };
+  listeners:{ [number]:listenerType };
 
   constructor(){
     // container holds all the properties in the queue
@@ -18,7 +24,7 @@ class Queue {
     */
     this.listeners = {}
   }
-  has(str:String){
+  has(str:string){
     // To check if property is in the queue
     if(!(typeof str == "string")) throw new Error("argument to `remove` method on Queue must be string")
     return this.container.hasOwnProperty(str)
@@ -40,12 +46,12 @@ class Queue {
     // Clears queue
     this.container = {}
   }
-  remove(str:String){
+  remove(str:string){
     // Removes property from queue
     if( !(typeof str == "string") ) throw new Error("argument to `remove` method on Queue must be string")
     delete this.container[str]
   }
-  add(str:String){
+  add(str:string){
     // Adds property to queue
     if( !(typeof str == "string") ) throw new Error("argument to `add` method on Queue must be string")
     
@@ -54,20 +60,20 @@ class Queue {
 
     this.container[str] = true
   }
-  addListener(cb:(...args:Args)=>any){
+  addListener(cb:(any)=>any) : listenerType {
     /*
       Listeners are functions 
     */
     let id = Math.random()*Date.now()*100000
-
-    let listener = {
+    let listener : listenerType  = {
       id,
       cb
     }
 
-    this.listeners[id] = listener
+    this.listeners[id] = listener;
+    return listener;
   }
-  removeListener(listener){
+  removeListener(listener:listenerType){
     delete this.listeners[listener.id]
   }
 

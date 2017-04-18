@@ -1,7 +1,13 @@
+// @flow
+
+import Queue from '../store/queue'
+import Computed from '../store/computed'
+import HivexConsole from '../misc/console'
+
 
 const helpers = {
 
-	descriptorIsClean(descriptor){
+	descriptorIsClean(descriptor:Object) : boolean {
 		/*
 		 - If the value is an object, check if it has an accessible descriptor. 
 		 - If it does, check that it is not already a Hivex Proxy.
@@ -10,16 +16,29 @@ const helpers = {
 		return ( descriptor && !( descriptor.set && descriptor.set.name == "HivexSetter" ) )
 	},
 
-	canAddProxy(obj, prop){
+	canAddProxy(obj:Object, prop:string){
     let value = obj[prop]
 		let descriptor = Object.getOwnPropertyDescriptor(obj, prop);
-		return ( typeof value == "object" && helpers.descriptorIsClean(descriptor)) 
-	} 
+    /*
+      its fine to assign something to the value of a computed property, but we don't
+      need to make Computed values reactive.
+    */
+		return ( !(value instanceof Computed) && typeof value == "object" && helpers.descriptorIsClean(descriptor)) 
+	}
 
 }
 
-import Queue from '../store/queue.js'
 
+type hivexProxyCbs = {
+  getterCb:anycb,
+  setterCb:anycb,
+}
+
+/**
+ * 
+ * 
+ * @class HivexProxy
+ */
 class HivexProxy {
 /*
   Takes in `obj` object, which is initially a store's state,
@@ -43,7 +62,12 @@ class HivexProxy {
    * 
    * @memberOf HivexProxy
    */
-  constructor(obj, rootStateProp, {getterCb, setterCb}){
+  obj:Object;
+  rootStateProp:?string;
+  getterCb:(any)=>any;
+  setterCb:(any)=>any;
+  
+  constructor(obj:Object, rootStateProp:?string, {getterCb, setterCb}:hivexProxyCbs){
     this.rootStateProp = rootStateProp;
 		this.setterCb = setterCb;
     this.getterCb = getterCb;
@@ -69,7 +93,7 @@ class HivexProxy {
     });
   }
 
-  get handler(){
+  get handler() : Object {
 
     let rootStateProp = this.rootStateProp;
     let getterCb = this.getterCb;
@@ -86,7 +110,7 @@ class HivexProxy {
        * @param {String} prop the property being accessed on @param obj
        * @returns @prop obj[prop]
        */
-      HivexGetter(obj, prop) {
+      HivexGetter(obj:Object, prop:string) : any {
 
 
 					let rootProp = rootStateProp || prop;
@@ -106,10 +130,10 @@ class HivexProxy {
               more object properties which need to be proxied.
           */
 
+          let value = obj[prop]
           if( !checkedProps.has(prop) ){
 
             checkedProps.add(prop)
-            let value = obj[prop]
 
             if( helpers.canAddProxy(obj, prop, value) ){
               obj[prop] = new HivexProxy(value, rootProp, {getterCb, setterCb})
@@ -124,6 +148,7 @@ class HivexProxy {
             value in the store requires
           */
 
+          // if this is the root prop & it's not a computed
           getterCb(rootProp)
 
           return obj[prop]
@@ -138,7 +163,7 @@ class HivexProxy {
        * @param {any} value 
        * @returns true
        */
-      HivexSetter(obj, prop, value){
+      HivexSetter(obj:Object, prop:string, value:any) : boolean {
 
 					let rootProp = rootStateProp || prop;
 

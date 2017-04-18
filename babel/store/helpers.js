@@ -1,6 +1,12 @@
-import exceptions from './exceptions'
+// @flow
 
-function formatObjectQuery(props) {
+import exceptions from './exceptions'
+import Queue from './queue'
+import Store from './index'
+import SetDictionary from './setdictionary'
+import Computed from './computed'
+
+function formatObjectQuery(props:Object | Array<string>) {
 	/*
 
 	  Formats array of object props into object with 
@@ -26,7 +32,7 @@ function formatObjectQuery(props) {
 	return formatted;
 }
 
-function formatObjectPieceForComponent(obj, propDictionary) {
+function formatObjectPieceForComponent(obj:Object, propDictionary:Object) {
 	/*
 	  Loops through keys in formatted props passed to `openState`
 	  and uses their values, the actual `state` properties,
@@ -41,7 +47,22 @@ function formatObjectPieceForComponent(obj, propDictionary) {
 	return piece;
 }
 
-function getStateUpdatesFromQuery(listener, state, queue) {
+function updateAllComputedInSet(computedDictionary:Set<Computed>){
+	computedDictionary.forEach(c=>c.update())
+}
+
+/**
+ * 
+ * 
+ * @param {Object} listener 
+ * @param {Object} state 
+ * @param {Queue} queue 
+ * @param {SetDictionary<Computed>} computedDictionary 
+ * @returns {Object} 
+ * 
+ * 
+ */
+function getStateUpdatesFromQuery(listener:Object, state:Object, queue:Queue, computedDictionary:SetDictionary<Computed>) : Object {
 
 	let futureState = {}
 
@@ -50,8 +71,19 @@ function getStateUpdatesFromQuery(listener, state, queue) {
 		let stateProp = listener.hivexStateKeys[propName]
 
 		if (queue.has(stateProp)) {
+				
+				console.log(queue)
+					if(stateProp == "todos" || propName == "todos"){
+						console.log(stateProp)
+						console.log("BONZNNANANNANANNA")
+					}
+				if(computedDictionary.has(stateProp)){
+					// Too intertwined/assumes too much knowledge of each other. Refactor.
+					updateAllComputedInSet( computedDictionary.access(stateProp) )
 
-			futureState[propName] = state[stateProp];
+				}
+
+				futureState[propName] = state[stateProp];
 
 		}
 
@@ -62,13 +94,14 @@ function getStateUpdatesFromQuery(listener, state, queue) {
 }
 
 
-function clearObject(obj){
+function clearObject(obj:Object){
 	for (let prop in obj) {
 		delete obj[prop]
 	}
 }
 
-function moduleFromQuery(moduleQuery, store){
+
+function moduleFromQuery(moduleQuery:string, store:Store){
 
 	/*
 		takes in module query in the form of "mymodule.nestedmodule.deeplynestedmodule"
@@ -93,16 +126,22 @@ function moduleFromQuery(moduleQuery, store){
 
 }
 
+type getModuleStateParams = {
+	moduleQuery:string,
+	stateQuery:Object,
+	component:Object,
+}
+
 function getModuleState({
 	moduleQuery="",
 	stateQuery,
 	component,
-}, store){
+}:getModuleStateParams, store:Store){
 	let module = moduleFromQuery(moduleQuery, store);
 	let formattedQuery = formatObjectQuery(stateQuery);
 }
 
-function parseOpenArgs(args){
+function parseOpenArgs(args:any){
 		/*
 			- The purpose of this function is to
 				take in an array of arguments passed to 
@@ -131,14 +170,23 @@ function parseOpenArgs(args){
 		]
 }
 
-function objectForEach(obj, cb){
+function objectForEach(obj:Object, cb:(...any:any)=>any){
 	for(let prop in obj){
 		let val = obj[prop]
 		cb(val, prop)
 	}
 }
 
-export default {
+function hasAProperty(obj:Object){
+	let result : boolean = false;
+	for(let prop in obj){
+		result = true;
+		break;
+	}
+	return result;
+}
+
+export {
 	formatObjectPieceForComponent,
 	formatObjectQuery,
 	getStateUpdatesFromQuery,
@@ -147,4 +195,5 @@ export default {
 	clearObject,
 	parseOpenArgs,
 	objectForEach,
+	hasAProperty,
 }

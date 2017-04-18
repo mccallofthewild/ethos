@@ -1,4 +1,5 @@
-export default {
+// @flow
+const HivexConsole = {
   intro(){
     try{
       console.group(`%c HIVEX.js 🐝 \t\t\t`, `font-size:16px; background-color:black; color:white; padding:5px; width:100%;`)
@@ -6,13 +7,13 @@ export default {
     }catch(error){}
   },
 
-  log(...args){
+  log(...args:any){
     try{
       console.log(`🍯 `, ...args)
     }catch(error){}
   },
 
-  error(...args){
+  error(...args:any){
     try{
       console.group(`%c🍯 Hivex Error`, `font-size:12px;`)
       console.error(...args);
@@ -20,3 +21,4 @@ export default {
     }catch(error){}
   }
 }
+export default HivexConsole

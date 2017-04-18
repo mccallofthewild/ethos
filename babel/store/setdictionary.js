@@ -1,5 +1,6 @@
 // @flow
-class SetDictionary {
+import Computed from './computed'
+class SetDictionary<TYPE>{
     /**
      * Creates an instance of SetDictionary.
      * @param {any} {
@@ -7,9 +8,9 @@ class SetDictionary {
      * 
      * @memberOf SetDictionary
      */
-    data: Object;
-    constructor({
-    }: Object){
+    data: { [any]:Set<TYPE> };
+
+    constructor(){
       this.data = {}
     }
     /**
@@ -20,7 +21,7 @@ class SetDictionary {
      * 
      * @memberOf SetDictionary
      */
-    has(key: String) : boolean {
+    has(key: string | number) : boolean {
       return this.data.hasOwnProperty(key)
     }
     /**
@@ -31,9 +32,13 @@ class SetDictionary {
      * 
      * @memberOf SetDictionary
      */
-    add(key:String, value: any) : void {
+    add(key:string, value: TYPE) : void {
       if(this.has(key)) this.data[key].add(value)
       else this.data[key] = new Set([value])
+    }
+
+    access(key:string) : Set<TYPE>{
+      return this.data[key];
     }
 }
 

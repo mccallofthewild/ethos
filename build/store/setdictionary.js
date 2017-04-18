@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -6,14 +6,16 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-function _objectDestructuringEmpty(obj) { if (obj == null) throw new TypeError("Cannot destructure undefined"); }
+var _computed = require('./computed');
+
+var _computed2 = _interopRequireDefault(_computed);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var SetDictionary = function () {
-  function SetDictionary(_ref) {
-    _objectDestructuringEmpty(_ref);
-
+  function SetDictionary() {
     _classCallCheck(this, SetDictionary);
 
     this.data = {};
@@ -37,7 +39,7 @@ var SetDictionary = function () {
 
 
   _createClass(SetDictionary, [{
-    key: "has",
+    key: 'has',
     value: function has(key) {
       return this.data.hasOwnProperty(key);
     }
@@ -51,9 +53,14 @@ var SetDictionary = function () {
      */
 
   }, {
-    key: "add",
+    key: 'add',
     value: function add(key, value) {
       if (this.has(key)) this.data[key].add(value);else this.data[key] = new Set([value]);
+    }
+  }, {
+    key: 'access',
+    value: function access(key) {
+      return this.data[key];
     }
   }]);
 

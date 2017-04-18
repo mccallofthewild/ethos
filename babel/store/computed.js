@@ -7,19 +7,24 @@ import SetDictionary from './setdictionary'
  * 
  * @class Computed - For creating reactively updated properties
  */
-type myParams = {
-  getter:(...args:Args)=>any,
+
+type computedParams = {
+  getter:(any)=>any,
   name:string,
   queue:Queue,
-  destination:object,
-  dictionary:SetDictionary,
+  destination:Object,
+  dictionary:SetDictionary<Computed>,
 }
+
 class Computed {
   /** 
    * Creates an instance of Computed.
    *     @callback {requestCallback} getter,
+              * this getter should be computed based on properties in @param dictionary
    *     @prop {String} obj.name, 
    *     @param {Queue} queue,
+            * A queue object which stores the root props which have been
+            changed in the destination object
    *     @param {Object} destination,
    *     @param {SetDictionary} dictionary
    *  
@@ -27,11 +32,12 @@ class Computed {
    * 
    * @memberOf Computed
    */
-  getter:(...args:Args)=>any;
+
+  getter:()=>any;
   name:string;
   queue:Queue;
-  destination:object;
-  dictionary:SetDictionary;
+  destination:Object;
+  dictionary:SetDictionary<Computed>;
 
 
   constructor({
@@ -40,7 +46,7 @@ class Computed {
     queue,
     destination,
     dictionary
-  }:myParams){
+  } : computedParams){
     this.getter = getter
     this.name = name
     this.queue = queue
@@ -50,30 +56,43 @@ class Computed {
     this.initialize()
   }
 
-  update(){
-    this.destination[this.name] = this.getter(new SealedObject(this.destination))
+  /**
+   * 
+   * 
+   * 
+   * @memberOf Computed
+   * updates the @prop destination with whatever the getter returns
+   */
+  update():void{
+
+    this.destination[this.name] = this.value
+
   }
-  initialize(){
+  get value() : any {
+    return this.getter(new SealedObject(this.destination))
+  }
+  initialize():void{
     /*
       This is essential to how Computed works.
       It adds the listener to the queue, runs update,
       then catches any prop that is passed through
+      and adds it to the dictionary along with 
+      the computed itself (`this`)
     */
     let listener = this.queue.addListener(
       item=>{
-        this.dictionary.add(item, this)
+        if(item!==this.name) this.dictionary.add(item, this)
     })
-    this.update()
+    let val = this.value
     this.queue.removeListener(listener)
+
+    this.update()
   }
 }
 
-let a : Computed = new Computed({
-  getter:function(){},
-  name:"idk",
-  queue:new Queue(),
-  destination:{},
-  dictionary:new SetDictionary()
-});
-
 export default Computed
+
+
+export {
+
+}

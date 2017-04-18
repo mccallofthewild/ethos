@@ -1,11 +1,35 @@
-import helpers from './helpers'
+// @flow
+import * as helpers from './helpers'
 import exceptions from './exceptions'
 import HivexProxy from '../observe/proxy'
 import Queue from './queue'
 import Computed from './computed'
 import SetDictionary from './setdictionary'
+import HivexConsole from '../misc/console'
+import type {reactComponent} from '../types'
+
+type storeParams = {
+  state?:Object,
+  getters?:Object,
+  setters?:Object,
+  actions?:Object, 
+  modules?:Object,
+  computed?:Object,
+  start?:(any)=>any
+}
 
 class Store {
+  _state:Object;
+  _getters:Object;
+  _setters:Object;
+  _actions:Object;
+  _modules:Object;
+  _computed:Object;
+  start:?(any)=>any;
+
+  listeners:Object;
+  queue:Queue;
+  computedDictionary:SetDictionary<Computed>;
 
   constructor({
     state={},
@@ -14,8 +38,8 @@ class Store {
     actions={},
     modules={},
     computed={},
-    start=null,
-  }) {
+    start,
+  }:storeParams) {
 
     this.listeners = {}
     this.queue = new Queue()
@@ -23,47 +47,34 @@ class Store {
     const setterCb = prop => this.queue.add(prop)
 
     let computedQueue = new Queue()
-
-    const getterCb = prop => computedQueue.add(prop)
-
+ 
+    const getterCb = prop => {
+      computedQueue.add(prop)
+    }
     this._state = new HivexProxy(state, null, {getterCb, setterCb})
     this._getters = getters
     this._setters = setters
     this._actions = actions
+    this._modules = modules
 
-    this.computedDict = new SetDictionary()
+    this.computedDictionary = new SetDictionary();
 
     helpers.objectForEach(computed, (func, name)=>{
       /*
         The constructor saves itself in the dictionary,
         so while it may seem strange, it's unnecessary to
         assign the object to anything.
-
-
-        REFACTOR THIS YOU WROTE IT AT 3AM AND IT'S SHIT CODE. THIS IS A GOOD PROJECT. DON'T WRITE SHIT CODE IN IT!
-
-
-
-
-
-
-        IN FACT, REFACTOR THE ENTIRE COMPUTED & SETDICTIONARY THING. IT'S ALL QUESTIONABLE.
-
-
-
-
-
-
-        
       */
       new Computed({
           getter:func,
           name,
           queue:computedQueue,
-          state:this._state,
-          dictionary:computedDict
+          destination:this._state,
+          dictionary:this.computedDictionary
       })
     })
+    console.log(computedQueue)
+    console.log(this.computedDictionary)
 
     helpers.objectForEach(modules, (module, prop)=>{
       this._modules[prop] = new Store(module)
@@ -78,7 +89,7 @@ class Store {
 
   }
 
-  get methodArgs() {
+  get methodArgs() : Object {
     /*
       Allows you to use object destructuring on methods
       without losing scope of `this`
@@ -91,7 +102,7 @@ class Store {
   }
 
 
-  change(setter, payload) {
+  change(setter : string, payload : any) {
       let func = this._setters[setter]
       if(!func){
         throw new Error(`Setter with name "${setter}" does not exist.`)
@@ -101,7 +112,7 @@ class Store {
       return res;
   }
 
-  access(getter) {
+  access(getter:string) {
       let func = this._getters[getter]
       if(!func){
         throw new Error(`Getter with name "${getter}" does not exist.`)
@@ -110,7 +121,7 @@ class Store {
       return res;
   }
 
-  send(action, payload) {
+  send(action:string, payload:any) {
       let myHivex = this;
       let arg = {
         ...this.methodArgs,
@@ -127,7 +138,7 @@ class Store {
       return res;
   }
 
-  module(moduleQuery){
+  module(moduleQuery: string ) : Store {
     /*
       to give users access to a module,
       good for when someone chooses to 
@@ -136,7 +147,7 @@ class Store {
     return helpers.moduleFromQuery(moduleQuery, this);
   }
 
-  listen(component) {
+  listen(component:reactComponent) {
 
     let myHivex = this;
 
@@ -151,7 +162,7 @@ class Store {
       try {
         if (mountFunc) mountFunc.bind(component)(...args)
       } catch (error) {
-        Hivex.error(error)
+        HivexConsole.error(error)
       }
       component[idKey] = `${component.constructor.name}/timestamp/${Date.now()}/id/${Math.round(Math.random() * 10000000)}`
       component._hivex_mounted = true;
@@ -168,7 +179,7 @@ class Store {
         component._hivex_mounted = false;
 
       } catch (error) {
-        Hivex.error(error)
+        HivexConsole.error(error)
       }
       delete myHivex.listeners[ component[idKey] ]
 
@@ -185,15 +196,17 @@ class Store {
       let listener = this.listeners[listenerKey]
 
       if (listener._hivex_mounted && listener.state) {
+        console.log("COOOL ")
 
-        let futureState = helpers.getStateUpdatesFromQuery(listener, this._state, this.queue)
+        let futureState = helpers.getStateUpdatesFromQuery(listener, this._state, this.queue, this.computedDictionary)
 
         /* 
           If futureState is not empty, run setState (react method) on component
           (update listener)
         */
 
-        if (!!Object.keys(futureState).length) {
+        console.log(futureState)
+        if (helpers.hasAProperty(futureState)) {
           listener.setState(futureState)
         }
       }
@@ -202,7 +215,7 @@ class Store {
     this.queue.clear()
   }
 
-  openSetters(...args){
+  openSetters(...args:any){
     let myHivex = this;
     let [moduleQuery, query, component] = helpers.parseOpenArgs(args)
     
@@ -229,7 +242,7 @@ class Store {
     Object.assign(component, setters)
   }
 
-  openActions(...args){
+  openActions(...args:any){
     let myHivex = this;
     let [moduleQuery, query, component] = helpers.parseOpenArgs(args)
 
@@ -255,7 +268,7 @@ class Store {
     Object.assign(component, actions)
   }
 
-  openState(...args) {
+  openState(...args:any) {
 
     let [moduleQuery, query, component] = helpers.parseOpenArgs(args)
 

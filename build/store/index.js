@@ -12,7 +12,7 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _helpers = require('./helpers');
 
-var _helpers2 = _interopRequireDefault(_helpers);
+var helpers = _interopRequireWildcard(_helpers);
 
 var _exceptions = require('./exceptions');
 
@@ -34,7 +34,13 @@ var _setdictionary = require('./setdictionary');
 
 var _setdictionary2 = _interopRequireDefault(_setdictionary);
 
+var _console = require('../misc/console');
+
+var _console2 = _interopRequireDefault(_console);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -54,8 +60,7 @@ var Store = function () {
         modules = _ref$modules === undefined ? {} : _ref$modules,
         _ref$computed = _ref.computed,
         computed = _ref$computed === undefined ? {} : _ref$computed,
-        _ref$start = _ref.start,
-        start = _ref$start === undefined ? null : _ref$start;
+        start = _ref.start;
 
     _classCallCheck(this, Store);
 
@@ -69,35 +74,34 @@ var Store = function () {
     var computedQueue = new _queue2.default();
 
     var getterCb = function getterCb(prop) {
-      return computedQueue.add(prop);
+      computedQueue.add(prop);
     };
-
     this._state = new _proxy2.default(state, null, { getterCb: getterCb, setterCb: setterCb });
     this._getters = getters;
     this._setters = setters;
     this._actions = actions;
+    this._modules = modules;
 
-    this.computedDict = new _setdictionary2.default();
+    this.computedDictionary = new _setdictionary2.default();
 
-    _helpers2.default.objectForEach(computed, function (func, name) {
+    helpers.objectForEach(computed, function (func, name) {
       /*
         The constructor saves itself in the dictionary,
         so while it may seem strange, it's unnecessary to
         assign the object to anything.
-          REFACTOR THIS YOU WROTE IT AT 3AM AND IT'S SHIT CODE. THIS IS A GOOD PROJECT. DON'T WRITE SHIT CODE IN IT!
-              IN FACT, REFACTOR THE ENTIRE COMPUTED & SETDICTIONARY THING. IT'S ALL QUESTIONABLE.
-              
       */
       new _computed2.default({
         getter: func,
         name: name,
         queue: computedQueue,
-        state: _this._state,
-        dictionary: computedDict
+        destination: _this._state,
+        dictionary: _this.computedDictionary
       });
     });
+    console.log(computedQueue);
+    console.log(this.computedDictionary);
 
-    _helpers2.default.objectForEach(modules, function (module, prop) {
+    helpers.objectForEach(modules, function (module, prop) {
       _this._modules[prop] = new Store(module);
     });
 
@@ -155,7 +159,7 @@ var Store = function () {
         good for when someone chooses to 
         have modules, but not use openers
       */
-      return _helpers2.default.moduleFromQuery(moduleQuery, this);
+      return helpers.moduleFromQuery(moduleQuery, this);
     }
   }, {
     key: 'listen',
@@ -173,7 +177,7 @@ var Store = function () {
         try {
           if (mountFunc) mountFunc.bind(component).apply(undefined, arguments);
         } catch (error) {
-          Hivex.error(error);
+          _console2.default.error(error);
         }
         component[idKey] = component.constructor.name + '/timestamp/' + Date.now() + '/id/' + Math.round(Math.random() * 10000000);
         component._hivex_mounted = true;
@@ -189,7 +193,7 @@ var Store = function () {
           myHivex.listeners[component[idKey]]._hivex_mounted = false;
           component._hivex_mounted = false;
         } catch (error) {
-          Hivex.error(error);
+          _console2.default.error(error);
         }
         delete myHivex.listeners[component[idKey]];
       };
@@ -206,15 +210,17 @@ var Store = function () {
         var listener = this.listeners[listenerKey];
 
         if (listener._hivex_mounted && listener.state) {
+          console.log("COOOL ");
 
-          var futureState = _helpers2.default.getStateUpdatesFromQuery(listener, this._state, this.queue);
+          var futureState = helpers.getStateUpdatesFromQuery(listener, this._state, this.queue, this.computedDictionary);
 
           /* 
             If futureState is not empty, run setState (react method) on component
             (update listener)
           */
 
-          if (!!Object.keys(futureState).length) {
+          console.log(futureState);
+          if (helpers.hasAProperty(futureState)) {
             listener.setState(futureState);
           }
         }
@@ -231,13 +237,13 @@ var Store = function () {
         args[_key] = arguments[_key];
       }
 
-      var _helpers$parseOpenArg = _helpers2.default.parseOpenArgs(args),
+      var _helpers$parseOpenArg = helpers.parseOpenArgs(args),
           _helpers$parseOpenArg2 = _slicedToArray(_helpers$parseOpenArg, 3),
           moduleQuery = _helpers$parseOpenArg2[0],
           query = _helpers$parseOpenArg2[1],
           component = _helpers$parseOpenArg2[2];
 
-      var module = _helpers2.default.moduleFromQuery(moduleQuery, this);
+      var module = helpers.moduleFromQuery(moduleQuery, this);
 
       /*
         If `module` is not the module we are currently in,
@@ -247,7 +253,7 @@ var Store = function () {
       if (module !== this) return module.openSetters(query, component);
 
       // `formattedKeys` are the user-defined keys which alias properties on a hivex object 
-      var formattedKeys = _helpers2.default.formatObjectQuery(query);
+      var formattedKeys = helpers.formatObjectQuery(query);
 
       var setters = {};
 
@@ -273,13 +279,13 @@ var Store = function () {
         args[_key2] = arguments[_key2];
       }
 
-      var _helpers$parseOpenArg3 = _helpers2.default.parseOpenArgs(args),
+      var _helpers$parseOpenArg3 = helpers.parseOpenArgs(args),
           _helpers$parseOpenArg4 = _slicedToArray(_helpers$parseOpenArg3, 3),
           moduleQuery = _helpers$parseOpenArg4[0],
           query = _helpers$parseOpenArg4[1],
           component = _helpers$parseOpenArg4[2];
 
-      var module = _helpers2.default.moduleFromQuery(moduleQuery, this);
+      var module = helpers.moduleFromQuery(moduleQuery, this);
 
       /*
         If `module` is not the module we are currently in,
@@ -288,7 +294,7 @@ var Store = function () {
       if (module !== this) return module.openActions(query, component);
 
       // `formattedKeys` are the user-defined keys which alias properties on a hivex object 
-      var formattedKeys = _helpers2.default.formatObjectQuery(query);
+      var formattedKeys = helpers.formatObjectQuery(query);
 
       var actions = {};
 
@@ -312,13 +318,13 @@ var Store = function () {
         args[_key3] = arguments[_key3];
       }
 
-      var _helpers$parseOpenArg5 = _helpers2.default.parseOpenArgs(args),
+      var _helpers$parseOpenArg5 = helpers.parseOpenArgs(args),
           _helpers$parseOpenArg6 = _slicedToArray(_helpers$parseOpenArg5, 3),
           moduleQuery = _helpers$parseOpenArg6[0],
           query = _helpers$parseOpenArg6[1],
           component = _helpers$parseOpenArg6[2];
 
-      var module = _helpers2.default.moduleFromQuery(moduleQuery, this);
+      var module = helpers.moduleFromQuery(moduleQuery, this);
 
       /*
         If `module` is not the module we are currently in,
@@ -328,13 +334,13 @@ var Store = function () {
       if (module !== this) return module.openState(query, component);
 
       // `formattedKeys` are the user-defined keys which alias properties on a hivex object 
-      var formattedKeys = _helpers2.default.formatObjectQuery(query);
+      var formattedKeys = helpers.formatObjectQuery(query);
 
       component.hivexStateKeys = formattedKeys;
 
       this.listen(component);
 
-      return _helpers2.default.formatObjectPieceForComponent(module._state, formattedKeys);
+      return helpers.formatObjectPieceForComponent(module._state, formattedKeys);
     }
   }, {
     key: 'methodArgs',

@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -8,9 +8,17 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-var _queue = require("../store/queue.js");
+var _queue = require('../store/queue');
 
 var _queue2 = _interopRequireDefault(_queue);
+
+var _computed = require('../store/computed');
+
+var _computed2 = _interopRequireDefault(_computed);
+
+var _console = require('../misc/console');
+
+var _console2 = _interopRequireDefault(_console);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -28,10 +36,19 @@ var helpers = {
   canAddProxy: function canAddProxy(obj, prop) {
     var value = obj[prop];
     var descriptor = Object.getOwnPropertyDescriptor(obj, prop);
-    return (typeof value === "undefined" ? "undefined" : _typeof(value)) == "object" && helpers.descriptorIsClean(descriptor);
+    /*
+      its fine to assign something to the value of a computed property, but we don't
+      need to make Computed values reactive.
+    */
+    return !(value instanceof _computed2.default) && (typeof value === 'undefined' ? 'undefined' : _typeof(value)) == "object" && helpers.descriptorIsClean(descriptor);
   }
 };
 
+/**
+ * 
+ * 
+ * @class HivexProxy
+ */
 var HivexProxy = function () {
   /*
     Takes in `obj` object, which is initially a store's state,
@@ -86,7 +103,7 @@ var HivexProxy = function () {
   }
 
   _createClass(HivexProxy, [{
-    key: "handler",
+    key: 'handler',
     get: function get() {
 
       var rootStateProp = this.rootStateProp;
@@ -120,10 +137,10 @@ var HivexProxy = function () {
               more object properties which need to be proxied.
           */
 
+          var value = obj[prop];
           if (!checkedProps.has(prop)) {
 
             checkedProps.add(prop);
-            var value = obj[prop];
 
             if (helpers.canAddProxy(obj, prop, value)) {
               obj[prop] = new HivexProxy(value, rootProp, { getterCb: getterCb, setterCb: setterCb });
@@ -137,6 +154,7 @@ var HivexProxy = function () {
             value in the store requires
           */
 
+          // if this is the root prop & it's not a computed
           getterCb(rootProp);
 
           return obj[prop];
@@ -160,7 +178,7 @@ var HivexProxy = function () {
             that is an object, we proxy it.
             Otherwise, set the value as usual.
           */
-          obj[prop] = (typeof value === "undefined" ? "undefined" : _typeof(value)) == "object" ? new HivexProxy(value, rootProp, { getterCb: getterCb, setterCb: setterCb }) : value;
+          obj[prop] = (typeof value === 'undefined' ? 'undefined' : _typeof(value)) == "object" ? new HivexProxy(value, rootProp, { getterCb: getterCb, setterCb: setterCb }) : value;
 
           /*
             Typically, cb will be the function adding the rootProp to the Store's queue

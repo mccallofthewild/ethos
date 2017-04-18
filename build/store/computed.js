@@ -27,6 +27,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * 
  * @class Computed - For creating reactively updated properties
  */
+
 var Computed = function () {
   function Computed(_ref) {
     var getter = _ref.getter,
@@ -45,11 +46,23 @@ var Computed = function () {
 
     this.initialize();
   }
+
+  /**
+   * 
+   * 
+   * 
+   * @memberOf Computed
+   * updates the @prop destination with whatever the getter returns
+   */
+
   /** 
    * Creates an instance of Computed.
    *     @callback {requestCallback} getter,
+              * this getter should be computed based on properties in @param dictionary
    *     @prop {String} obj.name, 
    *     @param {Queue} queue,
+            * A queue object which stores the root props which have been
+            changed in the destination object
    *     @param {Object} destination,
    *     @param {SetDictionary} dictionary
    *  
@@ -58,11 +71,11 @@ var Computed = function () {
    * @memberOf Computed
    */
 
-
   _createClass(Computed, [{
     key: 'update',
     value: function update() {
-      this.destination[this.name] = this.getter(new _sealed2.default(this.destination));
+
+      this.destination[this.name] = this.value;
     }
   }, {
     key: 'initialize',
@@ -73,24 +86,25 @@ var Computed = function () {
         This is essential to how Computed works.
         It adds the listener to the queue, runs update,
         then catches any prop that is passed through
+        and adds it to the dictionary along with 
+        the computed itself (`this`)
       */
       var listener = this.queue.addListener(function (item) {
-        _this.dictionary.add(item, _this);
+        if (item !== _this.name) _this.dictionary.add(item, _this);
       });
-      this.update();
+      var val = this.value;
       this.queue.removeListener(listener);
+
+      this.update();
+    }
+  }, {
+    key: 'value',
+    get: function get() {
+      return this.getter(new _sealed2.default(this.destination));
     }
   }]);
 
   return Computed;
 }();
-
-var a = new Computed({
-  getter: function getter() {},
-  name: "idk",
-  queue: new _queue2.default(),
-  destination: {},
-  dictionary: new _setdictionary2.default()
-});
 
 exports.default = Computed;

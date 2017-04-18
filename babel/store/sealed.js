@@ -1,5 +1,7 @@
+// @flow
+
 class SealedObject{
-	constructor(obj){
+	constructor(obj:Object){
 		return new Proxy(obj, {
 			get(target, prop){
 				return target[prop]

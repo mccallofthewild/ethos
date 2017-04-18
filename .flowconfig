@@ -2,10 +2,11 @@
 .*/build/.*
 
 [include]
-
-[libs]
 ./babel/store/computed.js
 ./babel/store/setdictionary.js
+
+[libs]
+flow-typed/types
 
 [options]
 unsafe.enable_getters_and_setters=true
