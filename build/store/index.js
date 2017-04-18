@@ -98,8 +98,6 @@ var Store = function () {
         dictionary: _this.computedDictionary
       });
     });
-    console.log(computedQueue);
-    console.log(this.computedDictionary);
 
     helpers.objectForEach(modules, function (module, prop) {
       _this._modules[prop] = new Store(module);
@@ -221,7 +219,10 @@ var Store = function () {
 
           console.log(futureState);
           if (helpers.hasAProperty(futureState)) {
-            listener.setState(futureState);
+            // listener.setState(futureState)
+            Object.assign(listener.state, futureState);
+            listener.forceUpdate.call(listener);
+            console.log('updatingslfjklf');
           }
         }
       }

@@ -73,10 +73,7 @@ function getStateUpdatesFromQuery(listener:Object, state:Object, queue:Queue, co
 		if (queue.has(stateProp)) {
 				
 				console.log(queue)
-					if(stateProp == "todos" || propName == "todos"){
-						console.log(stateProp)
-						console.log("BONZNNANANNANANNA")
-					}
+				
 				if(computedDictionary.has(stateProp)){
 					// Too intertwined/assumes too much knowledge of each other. Refactor.
 					updateAllComputedInSet( computedDictionary.access(stateProp) )

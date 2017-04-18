@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -6,6 +6,8 @@ Object.defineProperty(exports, "__esModule", {
 exports.applyState = applyState;
 function applyState(component, futureState) {
   return new Promise(function (resolve, reject) {
-    try {} catch (error) {}
+    try {
+      component.setState();
+    } catch (error) {}
   });
 }

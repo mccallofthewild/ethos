@@ -81,7 +81,7 @@ class Computed {
     */
     let listener = this.queue.addListener(
       item=>{
-        if(item!==this.name) this.dictionary.add(item, this)
+        this.dictionary.add(item, this)
     })
     let val = this.value
     this.queue.removeListener(listener)

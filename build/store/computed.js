@@ -90,7 +90,7 @@ var Computed = function () {
         the computed itself (`this`)
       */
       var listener = this.queue.addListener(function (item) {
-        if (item !== _this.name) _this.dictionary.add(item, _this);
+        _this.dictionary.add(item, _this);
       });
       var val = this.value;
       this.queue.removeListener(listener);

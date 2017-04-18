@@ -6,7 +6,6 @@ import Queue from './queue'
 import Computed from './computed'
 import SetDictionary from './setdictionary'
 import HivexConsole from '../misc/console'
-import type {reactComponent} from '../types'
 
 type storeParams = {
   state?:Object,
@@ -73,8 +72,6 @@ class Store {
           dictionary:this.computedDictionary
       })
     })
-    console.log(computedQueue)
-    console.log(this.computedDictionary)
 
     helpers.objectForEach(modules, (module, prop)=>{
       this._modules[prop] = new Store(module)
@@ -207,7 +204,10 @@ class Store {
 
         console.log(futureState)
         if (helpers.hasAProperty(futureState)) {
-          listener.setState(futureState)
+          // listener.setState(futureState)
+          Object.assign(listener.state, futureState)
+          listener.forceUpdate.call(listener)
+          console.log('updatingslfjklf')
         }
       }
     }
