@@ -40,7 +40,8 @@ var helpers = {
       its fine to assign something to the value of a computed property, but we don't
       need to make Computed values reactive.
     */
-    return !(value instanceof _computed2.default) && (typeof value === 'undefined' ? 'undefined' : _typeof(value)) == "object" && helpers.descriptorIsClean(descriptor);
+    var isObject = (typeof value === 'undefined' ? 'undefined' : _typeof(value)) == "object" && value instanceof Object;
+    return !(value instanceof _computed2.default) && isObject && !!value && helpers.descriptorIsClean(descriptor);
   }
 };
 
@@ -68,23 +69,24 @@ var HivexProxy = function () {
    * Creates an instance of HivexProxy.
    * @param {Object} obj - object to proxy
    * @param {String} rootStateProp - most 
-   * @param {any} {getterCb, setterCb} 
+   * @param {any} {getterCb, mutationCb} 
    * 
    * @memberOf HivexProxy
    */
   function HivexProxy(obj, rootStateProp, _ref) {
     var getterCb = _ref.getterCb,
-        setterCb = _ref.setterCb;
+        mutationCb = _ref.mutationCb;
 
     _classCallCheck(this, HivexProxy);
 
     this.rootStateProp = rootStateProp;
-    this.setterCb = setterCb;
+    this.mutationCb = mutationCb;
     this.getterCb = getterCb;
 
     var _handler = this.handler,
         HivexGetter = _handler.HivexGetter,
-        HivexSetter = _handler.HivexSetter;
+        HivexSetter = _handler.HivexSetter,
+        HivexDeleteProperty = _handler.HivexDeleteProperty;
 
     /*
       Why use a constructor/class at all if we just
@@ -97,7 +99,9 @@ var HivexProxy = function () {
 
       get: HivexGetter,
 
-      set: HivexSetter
+      set: HivexSetter,
+
+      deleteProperty: HivexDeleteProperty
 
     });
   }
@@ -108,7 +112,7 @@ var HivexProxy = function () {
 
       var rootStateProp = this.rootStateProp;
       var getterCb = this.getterCb;
-      var setterCb = this.setterCb;
+      var mutationCb = this.mutationCb;
 
       var checkedProps = new _queue2.default();
       return {
@@ -121,7 +125,7 @@ var HivexProxy = function () {
          * @param {String} prop the property being accessed on @param obj
          * @returns @prop obj[prop]
          */
-        HivexGetter: function HivexGetter(obj, prop) {
+        HivexGetter: function HivexGetter(obj, prop, receiver) {
 
           var rootProp = rootStateProp || prop;
 
@@ -143,7 +147,7 @@ var HivexProxy = function () {
             checkedProps.add(prop);
 
             if (helpers.canAddProxy(obj, prop, value)) {
-              obj[prop] = new HivexProxy(value, rootProp, { getterCb: getterCb, setterCb: setterCb });
+              obj[prop] = new HivexProxy(value, rootProp, { getterCb: getterCb, mutationCb: mutationCb });
             }
           }
 
@@ -157,7 +161,7 @@ var HivexProxy = function () {
           // if this is the root prop & it's not a computed
           getterCb(rootProp);
 
-          return obj[prop];
+          if (prop === Symbol.iterator) return obj[Symbol.iterator].bind(obj);else if (typeof value == 'function') return value.bind(obj);else return Reflect.get(obj, prop, receiver);
         },
 
 
@@ -178,12 +182,23 @@ var HivexProxy = function () {
             that is an object, we proxy it.
             Otherwise, set the value as usual.
           */
-          obj[prop] = (typeof value === 'undefined' ? 'undefined' : _typeof(value)) == "object" ? new HivexProxy(value, rootProp, { getterCb: getterCb, setterCb: setterCb }) : value;
+          var isObject = (typeof value === 'undefined' ? 'undefined' : _typeof(value)) == "object" && value instanceof Object;
+          obj[prop] = isObject ? new HivexProxy(value, rootProp, { getterCb: getterCb, mutationCb: mutationCb }) : value;
 
           /*
             Typically, cb will be the function adding the rootProp to the Store's queue
           */
-          setterCb(rootProp);
+          mutationCb(rootProp);
+
+          return true;
+        },
+        HivexDeleteProperty: function HivexDeleteProperty(obj, prop) {
+
+          var rootProp = rootStateProp || prop;
+
+          mutationCb(rootProp);
+
+          delete obj[prop];
 
           return true;
         }

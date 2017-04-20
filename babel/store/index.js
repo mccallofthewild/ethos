@@ -6,6 +6,9 @@ import Queue from './queue'
 import Computed from './computed'
 import SetDictionary from './setdictionary'
 import HivexConsole from '../misc/console'
+import {
+  listen as reactListen,
+} from '../react'
 
 type storeParams = {
   state?:Object,
@@ -26,7 +29,9 @@ class Store {
   _computed:Object;
   start:?(any)=>any;
 
-  listeners:Object;
+  listeners:{
+    [string]:hivexReactComponent
+  };
   queue:Queue;
   computedDictionary:SetDictionary<Computed>;
 
@@ -43,7 +48,7 @@ class Store {
     this.listeners = {}
     this.queue = new Queue()
 
-    const setterCb = prop =>{
+    const mutationCb = prop =>{
       this.queue.add(prop)
     }
 
@@ -52,7 +57,7 @@ class Store {
     const getterCb = prop => {
       computedQueue.add(prop)
     }
-    this._state = new HivexProxy(state, null, {getterCb, setterCb})
+    this._state = new HivexProxy(state, null, {getterCb, mutationCb})
     this._getters = getters
     this._setters = setters
     this._actions = actions
@@ -65,7 +70,7 @@ class Store {
 
     this.computedDictionary = new SetDictionary();
 
-    helpers.objectForEach(computed, (func, name)=>{
+    helpers.objectForEach(computed, (func:anycb, name:prop)=>{
       /*
         The constructor saves itself in the dictionary,
         so while it may seem strange, it's unnecessary to
@@ -102,17 +107,18 @@ class Store {
   }
 
 
-  change(setter : string, payload : any) {
+  change(setter : prop, payload : any) : any {
       let func = this._setters[setter]
       if(!func){
         throw new Error(`Setter with name "${setter}" does not exist.`)
       }
       let res = func(this._state, payload, this.methodArgs)
+
       this.updateListeners()
       return res;
   }
 
-  access(getter:string) {
+  access(getter:prop) : any {
       let func = this._getters[getter]
       if(!func){
         throw new Error(`Getter with name "${getter}" does not exist.`)
@@ -121,7 +127,7 @@ class Store {
       return res;
   }
 
-  send(action:string, payload:any) {
+  send(action:prop, payload:any) : any {
       let myHivex = this;
       let arg = {
         ...this.methodArgs,
@@ -147,50 +153,30 @@ class Store {
     return helpers.moduleFromQuery(moduleQuery, this);
   }
 
-  listen(component:reactComponent) {
-
-    let myHivex = this;
-
-    let {
-      componentDidMount: mountFunc,
-      componentWillUnmount: unmountFunc,
-    } = component
-
-    let idKey = "_hivex_id"
-
-    component.componentDidMount = (...args) => {
-      try {
-        if (mountFunc) mountFunc.apply(component, args)
-        
-      } catch (error) {
-        HivexConsole.error(error)
-      }
-      component[idKey] = `${component.constructor.name}/timestamp/${Date.now()}/id/${Math.round(Math.random() * 10000000)}`
-      component._hivex_mounted = true;
-      component._hivex_mounted_at = new Date()
-      myHivex.listeners[ component[idKey] ] = component
-      myHivex.updateListeners()
-    }
-
-    component.componentWillUnmount = (...args) => {
-
-      try {
-        if (unmountFunc) unmountFunc.bind(component)(...args)
-        myHivex.listeners[ component[idKey] ]._hivex_mounted = false
-        component._hivex_mounted = false;
-
-      } catch (error) {
-        HivexConsole.error(error)
-      }
-      delete myHivex.listeners[ component[idKey] ]
-
-    }
+  listen(component:reactComponent) : void {
+    reactListen(component, this)
   }
 
-  updateListeners() {
+  updateComputedState() : anycb {
+
+    this.queue.keys().forEach(
+      key=>{
+        if(this.computedDictionary.has(key)){
+          this.computedDictionary.access(key)
+          .forEach(computed=>computed.update())
+        }
+      })
+    return this.updateComputedState.bind(this)
+
+  }
+
+  updateListeners() : void {
 
     // if queue is empty, return.
     if(!this.queue.isPopulated) return;
+    
+    // runs twice for interdependent computeds
+    this.updateComputedState()()
 
     for (let listenerKey in this.listeners) {
 
@@ -206,9 +192,9 @@ class Store {
         */
 
         if (helpers.hasAProperty(futureState)) {
-          // listener.setState(futureState)
+
           Object.assign(listener.state, futureState)
-          listener.forceUpdate.call(listener)
+          if( !listener._hivex_is_updating && listener._hivex_has_rendered) listener.forceUpdate.call(listener)
         }
       }
     }
@@ -216,7 +202,7 @@ class Store {
     this.queue.clear()
   }
 
-  openSetters(...args:any){
+  openSetters(...args:any) : void {
     let myHivex = this;
     let [moduleQuery, query, component] = helpers.parseOpenArgs(args)
     
@@ -243,7 +229,7 @@ class Store {
     Object.assign(component, setters)
   }
 
-  openActions(...args:any){
+  openActions(...args:any) : void {
     let myHivex = this;
     let [moduleQuery, query, component] = helpers.parseOpenArgs(args)
 
@@ -269,7 +255,7 @@ class Store {
     Object.assign(component, actions)
   }
 
-  openState(...args:any) {
+  openState(...args:any) : Object {
 
     let [moduleQuery, query, component] = helpers.parseOpenArgs(args)
 

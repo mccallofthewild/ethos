@@ -11,7 +11,7 @@ type listenerType = {
 
 class Queue {
   
-  container:{ [string]:true };
+  container:{ [prop]:true };
   listeners:{ [number]:listenerType };
 
   constructor(){
@@ -24,10 +24,9 @@ class Queue {
     */
     this.listeners = {}
   }
-  has(str:string){
+  has(prop:prop){
     // To check if property is in the queue
-    if(!(typeof str == "string")) throw new Error("argument to `remove` method on Queue must be string")
-    return this.container.hasOwnProperty(str)
+    return this.container.hasOwnProperty(prop)
   }
   get isPopulated():boolean {
     /*
@@ -42,23 +41,23 @@ class Queue {
     }
     return populated;
   }
+  keys() : Array<string> {
+    return Object.getOwnPropertyNames(this.container)
+  }
   clear(){
     // Clears queue
     this.container = {}
   }
-  remove(str:string){
+  remove(prop:prop){
     // Removes property from queue
-    if( !(typeof str == "string") ) throw new Error("argument to `remove` method on Queue must be string")
-    delete this.container[str]
+    delete this.container[prop]
   }
-  add(str:string){
-    // Adds property to queue
-    if( !(typeof str == "string") ) throw new Error("argument to `add` method on Queue must be string")
-    
+  add(prop:prop){
+    // Adds property to queue    
     // fires off listeners
-    objectForEach(this.listeners, l=>l.cb(str))
+    objectForEach(this.listeners, l=>l.cb(prop))
 
-    this.container[str] = true
+    this.container[prop] = true
   }
   addListener(cb:(any)=>any) : listenerType {
     /*

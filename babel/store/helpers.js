@@ -47,8 +47,8 @@ function formatObjectPieceForComponent(obj:Object, propDictionary:Object) {
 	return piece;
 }
 
-function updateAllComputedInSet(computedDictionary:Set<Computed>){
-	computedDictionary.forEach(c=>c.update())
+function updateAllComputedInSet(computedSet:Set<Computed>){
+	computedSet.forEach(c=>c.update())
 }
 
 /**
@@ -71,12 +71,6 @@ function getStateUpdatesFromQuery(listener:Object, state:Object, queue:Queue, co
 		let stateProp = listener.hivexStateKeys[propName]
 
 		if (queue.has(stateProp)) {
-							
-				if(computedDictionary.has(stateProp)){
-					// Too intertwined/assumes too much knowledge of each other. Refactor.
-					updateAllComputedInSet( computedDictionary.access(stateProp) )
-
-				}
 
 				futureState[propName] = state[stateProp];
 

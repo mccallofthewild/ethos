@@ -6,7 +6,7 @@ class SealedObject{
 			get(target, prop){
 				return target[prop]
 			},
-			set(target, prop, value){
+			set(target:Object, prop:prop, value:any){
 				throw new Error(`Cannot mutate ${prop} inside Hivex sealed object.`)
 			}
 		})

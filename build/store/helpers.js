@@ -70,8 +70,8 @@ function formatObjectPieceForComponent(obj, propDictionary) {
 	return piece;
 }
 
-function updateAllComputedInSet(computedDictionary) {
-	computedDictionary.forEach(function (c) {
+function updateAllComputedInSet(computedSet) {
+	computedSet.forEach(function (c) {
 		return c.update();
 	});
 }
@@ -96,11 +96,6 @@ function getStateUpdatesFromQuery(listener, state, queue, computedDictionary) {
 		var stateProp = listener.hivexStateKeys[propName];
 
 		if (queue.has(stateProp)) {
-
-			if (computedDictionary.has(stateProp)) {
-				// Too intertwined/assumes too much knowledge of each other. Refactor.
-				updateAllComputedInSet(computedDictionary.access(stateProp));
-			}
 
 			futureState[propName] = state[stateProp];
 		}

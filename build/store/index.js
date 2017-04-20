@@ -38,6 +38,8 @@ var _console = require('../misc/console');
 
 var _console2 = _interopRequireDefault(_console);
 
+var _react = require('../react');
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
@@ -67,7 +69,7 @@ var Store = function () {
     this.listeners = {};
     this.queue = new _queue2.default();
 
-    var setterCb = function setterCb(prop) {
+    var mutationCb = function mutationCb(prop) {
       _this.queue.add(prop);
     };
 
@@ -76,7 +78,7 @@ var Store = function () {
     var getterCb = function getterCb(prop) {
       computedQueue.add(prop);
     };
-    this._state = new _proxy2.default(state, null, { getterCb: getterCb, setterCb: setterCb });
+    this._state = new _proxy2.default(state, null, { getterCb: getterCb, mutationCb: mutationCb });
     this._getters = getters;
     this._setters = setters;
     this._actions = actions;
@@ -120,6 +122,7 @@ var Store = function () {
         throw new Error('Setter with name "' + setter + '" does not exist.');
       }
       var res = func(this._state, payload, this.methodArgs);
+
       this.updateListeners();
       return res;
     }
@@ -163,43 +166,21 @@ var Store = function () {
   }, {
     key: 'listen',
     value: function listen(component) {
+      (0, _react.listen)(component, this);
+    }
+  }, {
+    key: 'updateComputedState',
+    value: function updateComputedState() {
+      var _this2 = this;
 
-      var myHivex = this;
-
-      var mountFunc = component.componentDidMount,
-          unmountFunc = component.componentWillUnmount;
-
-
-      var idKey = "_hivex_id";
-
-      component.componentDidMount = function () {
-        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-          args[_key] = arguments[_key];
+      this.queue.keys().forEach(function (key) {
+        if (_this2.computedDictionary.has(key)) {
+          _this2.computedDictionary.access(key).forEach(function (computed) {
+            return computed.update();
+          });
         }
-
-        try {
-          if (mountFunc) mountFunc.apply(component, args);
-        } catch (error) {
-          _console2.default.error(error);
-        }
-        component[idKey] = component.constructor.name + '/timestamp/' + Date.now() + '/id/' + Math.round(Math.random() * 10000000);
-        component._hivex_mounted = true;
-        component._hivex_mounted_at = new Date();
-        myHivex.listeners[component[idKey]] = component;
-        myHivex.updateListeners();
-      };
-
-      component.componentWillUnmount = function () {
-
-        try {
-          if (unmountFunc) unmountFunc.bind(component).apply(undefined, arguments);
-          myHivex.listeners[component[idKey]]._hivex_mounted = false;
-          component._hivex_mounted = false;
-        } catch (error) {
-          _console2.default.error(error);
-        }
-        delete myHivex.listeners[component[idKey]];
-      };
+      });
+      return this.updateComputedState.bind(this);
     }
   }, {
     key: 'updateListeners',
@@ -207,6 +188,9 @@ var Store = function () {
 
       // if queue is empty, return.
       if (!this.queue.isPopulated) return;
+
+      // runs twice for interdependent computeds
+      this.updateComputedState()();
 
       for (var listenerKey in this.listeners) {
 
@@ -222,9 +206,9 @@ var Store = function () {
           */
 
           if (helpers.hasAProperty(futureState)) {
-            // listener.setState(futureState)
+
             Object.assign(listener.state, futureState);
-            listener.forceUpdate.call(listener);
+            if (!listener._hivex_is_updating && listener._hivex_has_rendered) listener.forceUpdate.call(listener);
           }
         }
       }
@@ -236,8 +220,8 @@ var Store = function () {
     value: function openSetters() {
       var myHivex = this;
 
-      for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-        args[_key2] = arguments[_key2];
+      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
       }
 
       var _helpers$parseOpenArg = helpers.parseOpenArgs(args),
@@ -278,8 +262,8 @@ var Store = function () {
     value: function openActions() {
       var myHivex = this;
 
-      for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-        args[_key3] = arguments[_key3];
+      for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+        args[_key2] = arguments[_key2];
       }
 
       var _helpers$parseOpenArg3 = helpers.parseOpenArgs(args),
@@ -317,8 +301,8 @@ var Store = function () {
   }, {
     key: 'openState',
     value: function openState() {
-      for (var _len4 = arguments.length, args = Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
-        args[_key4] = arguments[_key4];
+      for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+        args[_key3] = arguments[_key3];
       }
 
       var _helpers$parseOpenArg5 = helpers.parseOpenArgs(args),

@@ -16,14 +16,15 @@ const helpers = {
 		return ( descriptor && !( descriptor.set && descriptor.set.name == "HivexSetter" ) )
 	},
 
-	canAddProxy(obj:Object, prop:string){
+	canAddProxy(obj:Object, prop:prop){
     let value = obj[prop]
 		let descriptor = Object.getOwnPropertyDescriptor(obj, prop);
     /*
       its fine to assign something to the value of a computed property, but we don't
       need to make Computed values reactive.
     */
-		return ( !(value instanceof Computed) && typeof value == "object" && helpers.descriptorIsClean(descriptor)) 
+    const isObject = (typeof value == "object" && value instanceof Object)
+		return ( !(value instanceof Computed) && isObject && !!value && helpers.descriptorIsClean(descriptor)) 
 	}
 
 }
@@ -31,7 +32,7 @@ const helpers = {
 
 type hivexProxyCbs = {
   getterCb:anycb,
-  setterCb:anycb,
+  mutationCb:anycb,
 }
 
 /**
@@ -58,23 +59,24 @@ class HivexProxy {
    * Creates an instance of HivexProxy.
    * @param {Object} obj - object to proxy
    * @param {String} rootStateProp - most 
-   * @param {any} {getterCb, setterCb} 
+   * @param {any} {getterCb, mutationCb} 
    * 
    * @memberOf HivexProxy
    */
   obj:Object;
-  rootStateProp:?string;
+  rootStateProp:?prop;
   getterCb:(any)=>any;
-  setterCb:(any)=>any;
+  mutationCb:(any)=>any;
   
-  constructor(obj:Object, rootStateProp:?string, {getterCb, setterCb}:hivexProxyCbs){
+  constructor(obj:Object, rootStateProp:?prop, {getterCb, mutationCb}:hivexProxyCbs){
     this.rootStateProp = rootStateProp;
-		this.setterCb = setterCb;
+		this.mutationCb = mutationCb;
     this.getterCb = getterCb;
 
     let {
       HivexGetter, 
-      HivexSetter
+      HivexSetter,
+      HivexDeleteProperty,
     } = this.handler;
 
     /*
@@ -88,7 +90,9 @@ class HivexProxy {
 
       get:HivexGetter,
 
-      set:HivexSetter
+      set:HivexSetter,
+
+      deleteProperty:HivexDeleteProperty,
 
     });
   }
@@ -97,7 +101,7 @@ class HivexProxy {
 
     let rootStateProp = this.rootStateProp;
     let getterCb = this.getterCb;
-		let setterCb = this.setterCb;
+		let mutationCb = this.mutationCb;
     
     let checkedProps = new Queue();
     return {
@@ -110,7 +114,7 @@ class HivexProxy {
        * @param {String} prop the property being accessed on @param obj
        * @returns @prop obj[prop]
        */
-      HivexGetter(obj:Object, prop:string) : any {
+      HivexGetter(obj:Object, prop:prop, receiver:Proxy<*>) : any {
 
 
 					let rootProp = rootStateProp || prop;
@@ -136,7 +140,7 @@ class HivexProxy {
             checkedProps.add(prop)
 
             if( helpers.canAddProxy(obj, prop, value) ){
-              obj[prop] = new HivexProxy(value, rootProp, {getterCb, setterCb})
+              obj[prop] = new HivexProxy(value, rootProp, {getterCb, mutationCb})
             }
           
           }
@@ -151,8 +155,12 @@ class HivexProxy {
           // if this is the root prop & it's not a computed
           getterCb(rootProp)
 
-          return obj[prop]
-
+          if (prop === Symbol.iterator)
+              return obj[Symbol.iterator].bind(obj);
+          else if (typeof value == 'function')
+            return value.bind(obj)
+          else
+              return Reflect.get(obj, prop, receiver);
       },
 
       /**
@@ -163,7 +171,7 @@ class HivexProxy {
        * @param {any} value 
        * @returns true
        */
-      HivexSetter(obj:Object, prop:string, value:any) : boolean {
+      HivexSetter(obj:Object, prop:prop, value:any) : boolean {
 
 					let rootProp = rootStateProp || prop;
 
@@ -172,12 +180,25 @@ class HivexProxy {
             that is an object, we proxy it.
             Otherwise, set the value as usual.
           */
-          obj[prop] = (typeof value == "object")? new HivexProxy(value, rootProp, {getterCb, setterCb}) : value;
+          const isObject = (typeof value == "object" && value instanceof Object)
+          obj[prop] = (isObject)? new HivexProxy(value, rootProp, {getterCb, mutationCb}) : value;
 
           /*
             Typically, cb will be the function adding the rootProp to the Store's queue
           */
-					setterCb(rootProp)
+					mutationCb(rootProp)
+
+          return true;
+
+      },
+
+      HivexDeleteProperty(obj:Object, prop:prop) : boolean {
+
+					let rootProp = rootStateProp || prop;
+
+          mutationCb(rootProp);
+
+          delete obj[prop];
 
           return true;
 

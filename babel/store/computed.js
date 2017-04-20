@@ -10,7 +10,7 @@ import SetDictionary from './setdictionary'
 
 type computedParams = {
   getter:(any)=>any,
-  name:string,
+  name:prop,
   queue:Queue,
   destination:Object,
   dictionary:SetDictionary<Computed>,
@@ -34,7 +34,7 @@ class Computed {
    */
 
   getter:()=>any;
-  name:string;
+  name:prop;
   queue:Queue;
   destination:Object;
   dictionary:SetDictionary<Computed>;
@@ -47,6 +47,7 @@ class Computed {
     destination,
     dictionary
   } : computedParams){
+    
     this.getter = getter
     this.name = name
     this.queue = queue

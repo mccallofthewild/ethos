@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _helpers = require("./helpers");
+var _helpers = require('./helpers');
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -25,40 +25,41 @@ var Queue = function () {
   }
 
   _createClass(Queue, [{
-    key: "has",
-    value: function has(str) {
+    key: 'has',
+    value: function has(prop) {
       // To check if property is in the queue
-      if (!(typeof str == "string")) throw new Error("argument to `remove` method on Queue must be string");
-      return this.container.hasOwnProperty(str);
+      return this.container.hasOwnProperty(prop);
     }
   }, {
-    key: "clear",
+    key: 'keys',
+    value: function keys() {
+      return Object.getOwnPropertyNames(this.container);
+    }
+  }, {
+    key: 'clear',
     value: function clear() {
       // Clears queue
       this.container = {};
     }
   }, {
-    key: "remove",
-    value: function remove(str) {
+    key: 'remove',
+    value: function remove(prop) {
       // Removes property from queue
-      if (!(typeof str == "string")) throw new Error("argument to `remove` method on Queue must be string");
-      delete this.container[str];
+      delete this.container[prop];
     }
   }, {
-    key: "add",
-    value: function add(str) {
-      // Adds property to queue
-      if (!(typeof str == "string")) throw new Error("argument to `add` method on Queue must be string");
-
+    key: 'add',
+    value: function add(prop) {
+      // Adds property to queue    
       // fires off listeners
       (0, _helpers.objectForEach)(this.listeners, function (l) {
-        return l.cb(str);
+        return l.cb(prop);
       });
 
-      this.container[str] = true;
+      this.container[prop] = true;
     }
   }, {
-    key: "addListener",
+    key: 'addListener',
     value: function addListener(cb) {
       /*
         Listeners are functions 
@@ -73,12 +74,12 @@ var Queue = function () {
       return listener;
     }
   }, {
-    key: "removeListener",
+    key: 'removeListener',
     value: function removeListener(listener) {
       delete this.listeners[listener.id];
     }
   }, {
-    key: "isPopulated",
+    key: 'isPopulated',
     get: function get() {
       /*
        To check if queue is not empty. 
@@ -86,7 +87,7 @@ var Queue = function () {
        (Object.keys) to do this
       */
       var populated = false;
-      for (var prop in this.container) {
+      for (var _prop in this.container) {
         populated = true;
         break;
       }
