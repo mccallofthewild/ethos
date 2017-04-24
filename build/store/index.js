@@ -9,6 +9,8 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+// import HivexProxy from '../observe/proxy'
+
 
 var _helpers = require('./helpers');
 
@@ -18,9 +20,7 @@ var _exceptions = require('./exceptions');
 
 var _exceptions2 = _interopRequireDefault(_exceptions);
 
-var _proxy = require('../observe/proxy');
-
-var _proxy2 = _interopRequireDefault(_proxy);
+var _observe = require('../observe');
 
 var _queue = require('./queue');
 
@@ -69,16 +69,18 @@ var Store = function () {
     this.listeners = {};
     this.queue = new _queue2.default();
 
-    var mutationCb = function mutationCb(prop) {
+    var setterCb = function setterCb(prop) {
       _this.queue.add(prop);
     };
+    console.log("NEW VERSION LOADED!!!!!");
 
     var computedQueue = new _queue2.default();
 
     var getterCb = function getterCb(prop) {
       computedQueue.add(prop);
     };
-    this._state = new _proxy2.default(state, null, { getterCb: getterCb, mutationCb: mutationCb });
+    this._state = state;
+    (0, _observe.hivexObserve)(state, getterCb, setterCb);
     this._getters = getters;
     this._setters = setters;
     this._actions = actions;

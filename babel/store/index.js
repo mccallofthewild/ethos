@@ -1,7 +1,10 @@
 // @flow
 import * as helpers from './helpers'
 import exceptions from './exceptions'
-import HivexProxy from '../observe/proxy'
+// import HivexProxy from '../observe/proxy'
+import {
+  hivexObserve
+} from '../observe'
 import Queue from './queue'
 import Computed from './computed'
 import SetDictionary from './setdictionary'
@@ -48,16 +51,18 @@ class Store {
     this.listeners = {}
     this.queue = new Queue()
 
-    const mutationCb = prop =>{
+    const setterCb = prop =>{
       this.queue.add(prop)
     }
+    console.log("NEW VERSION LOADED!!!!!")
 
     let computedQueue = new Queue()
  
     const getterCb = prop => {
       computedQueue.add(prop)
     }
-    this._state = new HivexProxy(state, null, {getterCb, mutationCb})
+    this._state = state;
+    hivexObserve(state, getterCb, setterCb)
     this._getters = getters
     this._setters = setters
     this._actions = actions
