@@ -49,7 +49,7 @@ class Store {
   }:storeParams) {
 
     this.listeners = {}
-    this.queue = new Queue()
+    this.queue = new Queue() 
 
     const setterCb = prop =>{
       this.queue.add(prop)
