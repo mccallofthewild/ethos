@@ -68,19 +68,20 @@ var Store = function () {
 
     this.listeners = {};
     this.queue = new _queue2.default();
+    var count = 0;
 
     var setterCb = function setterCb(prop) {
       _this.queue.add(prop);
     };
-    console.log("NEW VERSION LOADED!!!!!");
 
-    var computedQueue = new _queue2.default();
+    var getterQueue = new _queue2.default();
 
     var getterCb = function getterCb(prop) {
-      computedQueue.add(prop);
+      getterQueue.add(prop);
     };
+
     this._state = state;
-    (0, _observe.hivexObserve)(state, getterCb, setterCb);
+    (0, _observe.hivexObserve)(this._state, getterCb, setterCb);
     this._getters = getters;
     this._setters = setters;
     this._actions = actions;
@@ -91,8 +92,6 @@ var Store = function () {
 
     this._modules = modules;
 
-    this.computedDictionary = new _setdictionary2.default();
-
     helpers.objectForEach(computed, function (func, name) {
       /*
         The constructor saves itself in the dictionary,
@@ -102,9 +101,9 @@ var Store = function () {
       new _computed2.default({
         getter: func,
         name: name,
-        queue: computedQueue,
-        destination: _this._state,
-        dictionary: _this.computedDictionary
+        getterQueue: getterQueue,
+        setterQueue: _this.queue,
+        destination: _this._state
       });
     });
 
@@ -171,28 +170,11 @@ var Store = function () {
       (0, _react.listen)(component, this);
     }
   }, {
-    key: 'updateComputedState',
-    value: function updateComputedState() {
-      var _this2 = this;
-
-      this.queue.keys().forEach(function (key) {
-        if (_this2.computedDictionary.has(key)) {
-          _this2.computedDictionary.access(key).forEach(function (computed) {
-            return computed.update();
-          });
-        }
-      });
-      return this.updateComputedState.bind(this);
-    }
-  }, {
     key: 'updateListeners',
     value: function updateListeners() {
 
       // if queue is empty, return.
       if (!this.queue.isPopulated) return;
-
-      // runs twice for interdependent computeds
-      this.updateComputedState()();
 
       for (var listenerKey in this.listeners) {
 
@@ -200,7 +182,7 @@ var Store = function () {
 
         if (listener._hivex_mounted && listener.state) {
 
-          var futureState = helpers.getStateUpdatesFromQuery(listener, this._state, this.queue, this.computedDictionary);
+          var futureState = helpers.getStateUpdatesFromQuery(listener, this._state, this.queue);
 
           /* 
             If futureState is not empty, run setState (react method) on component
@@ -210,6 +192,7 @@ var Store = function () {
           if (helpers.hasAProperty(futureState)) {
 
             Object.assign(listener.state, futureState);
+
             if (!listener._hivex_is_updating && listener._hivex_has_rendered) listener.forceUpdate.call(listener);
           }
         }
@@ -249,7 +232,7 @@ var Store = function () {
       var _loop = function _loop(alias) {
         var name = formattedKeys[alias];
         setters[alias] = function (payload) {
-          myHivex.change(name, payload);
+          return myHivex.change(name, payload);
         };
       };
 
@@ -290,7 +273,7 @@ var Store = function () {
       var _loop2 = function _loop2(alias) {
         var name = formattedKeys[alias];
         actions[alias] = function (payload) {
-          module.send(name, payload);
+          return module.send(name, payload);
         };
       };
 

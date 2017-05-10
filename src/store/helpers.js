@@ -57,13 +57,12 @@ function updateAllComputedInSet(computedSet:Set<Computed>){
  * @param {Object} listener 
  * @param {Object} state 
  * @param {Queue} queue 
- * @param {SetDictionary<Computed>} computedDictionary 
  * @returns {Object} 
  * 
  * 
  */
-function getStateUpdatesFromQuery(listener:Object, state:Object, queue:Queue, computedDictionary:SetDictionary<Computed>) : Object {
-
+function getStateUpdatesFromQuery(listener:Object, state:Object, queue:Queue) : Object {
+	console.log(JSON.stringify(queue))
 	let futureState = {}
 
 	for (let propName in listener.hivexStateKeys) {

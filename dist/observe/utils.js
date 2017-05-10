@@ -8,5 +8,5 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 exports.isObject = isObject;
 function isObject(data) {
-  return (typeof data === "undefined" ? "undefined" : _typeof(data)) === "object" && data !== null;
+  return (typeof data === "undefined" ? "undefined" : _typeof(data)) == "object" && data !== null;
 }

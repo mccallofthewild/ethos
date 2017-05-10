@@ -19,6 +19,15 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
+/**
+ * for properties on the root of the observed object (typically state)
+ * ( no root prop passed )
+ * 
+ * @export
+ * @param {Object} obj 
+ * @param {anycb} getterCb 
+ * @param {anycb} setterCb 
+ */
 function hivexObserve(obj, getterCb, setterCb) {
 
     var descriptors = {};
@@ -29,6 +38,13 @@ function hivexObserve(obj, getterCb, setterCb) {
     Object.defineProperties(obj, descriptors);
 }
 
+/**
+ * for nested properties in the observed object (requires root prop)
+ * 
+ * @export
+ * @param {...observeArgs} args 
+ * @returns {Object} 
+ */
 function observeProperties() {
     for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
         args[_key] = arguments[_key];
@@ -40,14 +56,6 @@ function observeProperties() {
         getterCb = _args[2],
         setterCb = _args[3];
 
-    var blacklist = /(Map)/;
-
-    var protoString = obj.__proto__.constructor.name;
-
-    if (blacklist.test(protoString)) {
-        obj = _specials2.default[protoString].apply(_specials2.default, _toConsumableArray(args));
-    }
-
     var descriptors = {};
 
     Object.getOwnPropertyNames(obj).forEach(function (prop) {
@@ -55,6 +63,20 @@ function observeProperties() {
     });
 
     Object.defineProperties(obj, descriptors);
+
+    /*
+     Define properties first to avoid applying unnecessary getters/setters to
+     methods overwritten on blacklisted objects
+    */
+    var blacklist = /(Map|Array)/;
+
+    var protoString = obj.__proto__.constructor.name;
+
+    if (blacklist.test(protoString)) {
+        console.log(obj);
+        obj = _specials2.default[protoString].apply(_specials2.default, _toConsumableArray(args));
+        console.log(obj);
+    }
 
     return obj;
 }
@@ -72,7 +94,8 @@ function getHivexDescriptor(obj, prop, observerArgs) {
         originalGetter = _descriptor$get === undefined ? false : _descriptor$get,
         _descriptor$set = descriptor.set,
         originalSetter = _descriptor$set === undefined ? false : _descriptor$set,
-        configurable = descriptor.configurable;
+        configurable = descriptor.configurable,
+        enumerable = descriptor.enumerable;
 
 
     if (!configurable) {
@@ -105,13 +128,17 @@ function getHivexDescriptor(obj, prop, observerArgs) {
                 observeProperties.apply(undefined, _toConsumableArray(observerArgs));
             }
 
-            setterCb(rootProp);
-
             value = val;
+
+            /*
+             setterCb must run AFTER the value is set,
+             or it will be updating on an old value
+            */
+            setterCb(rootProp);
 
             if (originalSetter) return originalSetter.call(obj, value);
 
-            return !!value;
+            return value;
         }
 
     };

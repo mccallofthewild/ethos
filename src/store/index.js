@@ -36,7 +36,6 @@ class Store {
     [string]:hivexReactComponent
   };
   queue:Queue;
-  computedDictionary:SetDictionary<Computed>;
 
   constructor({
     state={},
@@ -50,19 +49,20 @@ class Store {
 
     this.listeners = {}
     this.queue = new Queue() 
+    let count = 0;
 
     const setterCb = prop =>{
       this.queue.add(prop)
     }
-    console.log("NEW VERSION LOADED!!!!!")
 
-    let computedQueue = new Queue()
+    let getterQueue = new Queue()
  
     const getterCb = prop => {
-      computedQueue.add(prop)
+      getterQueue.add(prop)
     }
+
     this._state = state;
-    hivexObserve(state, getterCb, setterCb)
+    hivexObserve(this._state, getterCb, setterCb)
     this._getters = getters
     this._setters = setters
     this._actions = actions
@@ -73,7 +73,6 @@ class Store {
 
     this._modules = modules
 
-    this.computedDictionary = new SetDictionary();
 
     helpers.objectForEach(computed, (func:anycb, name:prop)=>{
       /*
@@ -84,9 +83,9 @@ class Store {
       new Computed({
           getter:func,
           name,
-          queue:computedQueue,
+          getterQueue:getterQueue,
+          setterQueue:this.queue,
           destination:this._state,
-          dictionary:this.computedDictionary
       })
     })
 
@@ -162,26 +161,11 @@ class Store {
     reactListen(component, this)
   }
 
-  updateComputedState() : anycb {
-
-    this.queue.keys().forEach(
-      key=>{
-        if(this.computedDictionary.has(key)){
-          this.computedDictionary.access(key)
-          .forEach(computed=>computed.update())
-        }
-      })
-    return this.updateComputedState.bind(this)
-
-  }
 
   updateListeners() : void {
 
     // if queue is empty, return.
     if(!this.queue.isPopulated) return;
-    
-    // runs twice for interdependent computeds
-    this.updateComputedState()()
 
     for (let listenerKey in this.listeners) {
 
@@ -189,7 +173,7 @@ class Store {
 
       if (listener._hivex_mounted && listener.state) {
 
-        let futureState = helpers.getStateUpdatesFromQuery(listener, this._state, this.queue, this.computedDictionary)
+        let futureState = helpers.getStateUpdatesFromQuery(listener, this._state, this.queue)
 
         /* 
           If futureState is not empty, run setState (react method) on component
@@ -199,6 +183,7 @@ class Store {
         if (helpers.hasAProperty(futureState)) {
 
           Object.assign(listener.state, futureState)
+
           if( !listener._hivex_is_updating && listener._hivex_has_rendered) listener.forceUpdate.call(listener)
         }
       }
@@ -227,7 +212,7 @@ class Store {
     for(let alias in formattedKeys){
       let name = formattedKeys[alias]
       setters[alias] = function(payload){
-        myHivex.change(name, payload)
+        return myHivex.change(name, payload)
       }
     }
 
@@ -253,7 +238,7 @@ class Store {
     for(let alias in formattedKeys){
       let name = formattedKeys[alias]
       actions[alias] = function(payload){
-        module.send(name, payload)
+        return module.send(name, payload)
       }
     }
 

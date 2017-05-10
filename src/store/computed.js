@@ -11,9 +11,9 @@ import SetDictionary from './setdictionary'
 type computedParams = {
   getter:(any)=>any,
   name:prop,
-  queue:Queue,
+  getterQueue:Queue,
+  setterQueue:Queue,
   destination:Object,
-  dictionary:SetDictionary<Computed>,
 }
 
 class Computed {
@@ -26,7 +26,6 @@ class Computed {
             * A queue object which stores the root props which have been
             changed in the destination object
    *     @param {Object} destination,
-   *     @param {SetDictionary} dictionary
    *  
    * 
    * 
@@ -35,25 +34,26 @@ class Computed {
 
   getter:()=>any;
   name:prop;
-  queue:Queue;
+  getterQueue:Queue;
+  setterQueue:Queue;
   destination:Object;
-  dictionary:SetDictionary<Computed>;
-
+  dependencies:Set<prop>;
 
   constructor({
     getter,
     name,
-    queue,
+    getterQueue,
+    setterQueue,
     destination,
     dictionary
   } : computedParams){
     
     this.getter = getter
     this.name = name
-    this.queue = queue
+    this.getterQueue = getterQueue;
+    this.setterQueue = setterQueue;
     this.destination = destination
-    this.dictionary = dictionary;
-
+    this.dependencies = new Set();
     this.initialize()
   }
 
@@ -63,31 +63,45 @@ class Computed {
    * 
    * @memberOf Computed
    * updates the @prop destination with whatever the getter returns
+   * adds prop to the setterQueue because it has been updated
    */
   update():void{
 
     this.destination[this.name] = this.value
+    this.setterQueue.add(this.name);
 
   }
+
   get value() : any {
     return this.getter(new SealedObject(this.destination))
   }
+
   initialize():void{
     /*
       This is essential to how Computed works.
-      It adds the listener to the queue, runs update,
-      then catches any prop that is passed through
-      and adds it to the dictionary along with 
-      the computed itself (`this`)
+      It adds the listener to the getterQueue to find out
+      which properties it is dependent on.
+      When property values change and, as a result,
+      properties are added to the setterQueue,
+      `setterListener` fires and checks if the property
+      is in the dependencies. If it is, the computed is
+      updated.
     */
-    let listener = this.queue.addListener(
+    const getterListener = this.getterQueue.addListener(
       item=>{
-        this.dictionary.add(item, this)
+        this.dependencies.add(item)
     })
-    let val = this.value
-    this.queue.removeListener(listener)
-
+    
     this.update()
+
+    this.getterQueue.removeListener(getterListener)
+
+    const setterListener = this.setterQueue.addListener(
+      item=>{
+        if(this.dependencies.has(item)) this.update()
+      }
+    )
+
   }
 }
 

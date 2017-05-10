@@ -1,2 +1,2 @@
-let Hivex = require('./build/hivex.js')
+var Hivex = require('./dist/hivex.js')
 module.exports = Hivex

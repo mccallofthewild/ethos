@@ -82,13 +82,12 @@ function updateAllComputedInSet(computedSet) {
  * @param {Object} listener 
  * @param {Object} state 
  * @param {Queue} queue 
- * @param {SetDictionary<Computed>} computedDictionary 
  * @returns {Object} 
  * 
  * 
  */
-function getStateUpdatesFromQuery(listener, state, queue, computedDictionary) {
-
+function getStateUpdatesFromQuery(listener, state, queue) {
+	console.log(JSON.stringify(queue));
 	var futureState = {};
 
 	for (var propName in listener.hivexStateKeys) {

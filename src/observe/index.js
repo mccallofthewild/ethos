@@ -11,8 +11,17 @@ type descriptor = {
     configurable?:()=>any,
 }
 
+/**
+ * for properties on the root of the observed object (typically state)
+ * ( no root prop passed )
+ * 
+ * @export
+ * @param {Object} obj 
+ * @param {anycb} getterCb 
+ * @param {anycb} setterCb 
+ */
 export function hivexObserve(obj:Object, getterCb:anycb, setterCb:anycb) : void {
-    
+
     let descriptors = {}
 
     Object.getOwnPropertyNames(obj)
@@ -24,19 +33,19 @@ export function hivexObserve(obj:Object, getterCb:anycb, setterCb:anycb) : void 
 }
 
 
+/**
+ * for nested properties in the observed object (requires root prop)
+ * 
+ * @export
+ * @param {...observeArgs} args 
+ * @returns {Object} 
+ */
 export function observeProperties(...args:observeArgs) : Object {
 
-    let [ 
+    let [
             obj, rootProp, getterCb, setterCb
         ] = args;
 
-    const blacklist = /(Map)/
-
-    let protoString = obj.__proto__.constructor.name;
-
-    if( blacklist.test(protoString) ) {
-        obj =  specials[protoString](...args)
-    }
 
     let descriptors = {}
 
@@ -46,6 +55,21 @@ export function observeProperties(...args:observeArgs) : Object {
     )
 
     Object.defineProperties(obj, descriptors);
+    
+    /*
+     Define properties first to avoid applying unnecessary getters/setters to
+     methods overwritten on blacklisted objects
+    */
+    const blacklist = /(Map|Array)/
+
+    let protoString = obj.__proto__.constructor.name;
+
+    if( blacklist.test(protoString) ) {
+        console.log(obj)
+        obj = specials[protoString](...args)
+        console.log(obj)
+
+    }
     
     return obj;
 
@@ -57,13 +81,15 @@ function getHivexDescriptor(obj, prop, observerArgs) : Object {
 
     const descriptor = Object.getOwnPropertyDescriptor(obj, prop);
 
-    let {
+    const {
 
         get:originalGetter=false,
         set:originalSetter=false,
         configurable,
+        enumerable,
 
     } = descriptor;
+
 
     if(!configurable){
         return descriptor;
@@ -87,7 +113,7 @@ function getHivexDescriptor(obj, prop, observerArgs) : Object {
             getterCb(rootProp)
 
             return originalGetter? originalGetter.call(obj) : value;
-        },
+        },   
 
         set: function HivexSetter(val){
 
@@ -96,13 +122,18 @@ function getHivexDescriptor(obj, prop, observerArgs) : Object {
                 observeProperties(...observerArgs)
             }
             
-            setterCb(rootProp)
 
             value = val;
 
+            /*
+             setterCb must run AFTER the value is set,
+             or it will be updating on an old value
+            */
+            setterCb(rootProp)
+
             if(originalSetter) return originalSetter.call(obj, value) 
 
-            return !!value;
+            return value;
         }
 
     }

@@ -8,16 +8,10 @@ import {
 } from '../utils'
 
 const proto = {
-  getters:[
-    'get', 'has', 'entries', 'keys', 'values', 'forEach'
-  ],
-  
   setters:[
     'delete', 'clear'
   ]
 }
-
-// export  (...args:any)=>args
 
 
 export default (...observeArgs:observeArgs)=>{
@@ -29,8 +23,9 @@ export default (...observeArgs:observeArgs)=>{
             if( !(typeof originalFn == 'function') ) return;
             
             obj[setter] = (...args)=>{
-              originalFn.call(obj, ...args)
+              let rtnVal = originalFn.call(obj, ...args)
               setterCb(rootProp)
+              return rtnVal;
             }
             
           })
@@ -42,21 +37,15 @@ export default (...observeArgs:observeArgs)=>{
             observeProperties(value, rootProp, getterCb, setterCb)
           }
           try{
-            originalSet.apply(originalSet, [key, value])
+            let rtnVal = originalSet.apply(originalSet, [key, value]);
+
+            setterCb(rootProp);
+
+            return rtnVal;
+
           }catch(error){}
         }
 
-        proto.getters.forEach(
-          getter=>{
-            let originalFn = obj[getter]
-            if( !(typeof originalFn == 'function') ) return;
-            
-            obj[getter] = (...args)=>{
-              originalFn.apply(obj, args)
-              getterCb(rootProp)
-            }
-          }
-        )
 
         obj.forEach(
           (value, key, map)=>{

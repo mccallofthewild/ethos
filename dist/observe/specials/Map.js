@@ -11,13 +11,8 @@ var _ = require('../');
 var _utils = require('../utils');
 
 var proto = {
-  getters: ['get', 'has', 'entries', 'keys', 'values', 'forEach'],
-
   setters: ['delete', 'clear']
 };
-
-// export  (...args:any)=>args
-
 
 exports.default = function () {
   for (var _len = arguments.length, observeArgs = Array(_len), _key = 0; _key < _len; _key++) {
@@ -39,8 +34,9 @@ exports.default = function () {
         args[_key2] = arguments[_key2];
       }
 
-      originalFn.call.apply(originalFn, [obj].concat(args));
+      var rtnVal = originalFn.call.apply(originalFn, [obj].concat(args));
       setterCb(rootProp);
+      return rtnVal;
     };
   });
 
@@ -51,23 +47,13 @@ exports.default = function () {
       (0, _.observeProperties)(value, rootProp, getterCb, setterCb);
     }
     try {
-      originalSet.apply(originalSet, [key, value]);
+      var rtnVal = originalSet.apply(originalSet, [key, value]);
+
+      setterCb(rootProp);
+
+      return rtnVal;
     } catch (error) {}
   };
-
-  proto.getters.forEach(function (getter) {
-    var originalFn = obj[getter];
-    if (!(typeof originalFn == 'function')) return;
-
-    obj[getter] = function () {
-      for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-        args[_key3] = arguments[_key3];
-      }
-
-      originalFn.apply(obj, args);
-      getterCb(rootProp);
-    };
-  });
 
   obj.forEach(function (value, key, map) {
     if ((0, _utils.isObject)(value)) (0, _.observeProperties)(value, rootProp, getterCb, setterCb);

@@ -2,8 +2,7 @@
 .*/build/.*
 
 [include]
-./babel/store/computed.js
-./babel/store/setdictionary.js
+./src/
 
 [libs]
 flow-typed/types
