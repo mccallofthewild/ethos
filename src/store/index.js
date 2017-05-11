@@ -62,7 +62,6 @@ class Store {
     }
 
     this._state = state;
-    hivexObserve(this._state, getterCb, setterCb)
     this._getters = getters
     this._setters = setters
     this._actions = actions
@@ -73,6 +72,23 @@ class Store {
 
     this._modules = modules
 
+    /*
+      Defining getters that run `getterCb` on all
+      computed properties ensures that all 
+      interdependent computed props will
+      be reactive to other computed values changing.
+    */
+    let computedProperties : Array<prop> = Object.getOwnPropertyNames(computed);
+    
+    computedProperties.forEach(
+      prop=>{
+        
+        this._state[prop] = null;
+
+      }
+    )
+    
+    hivexObserve(this._state, getterCb, setterCb)
 
     helpers.objectForEach(computed, (func:anycb, name:prop)=>{
       /*

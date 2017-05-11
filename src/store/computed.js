@@ -1,5 +1,4 @@
 // @flow
-import SealedObject from './sealed'
 import Queue from './queue'
 import SetDictionary from './setdictionary'
 /**
@@ -73,7 +72,7 @@ class Computed {
   }
 
   get value() : any {
-    return this.getter(new SealedObject(this.destination))
+    return this.getter(this.destination)
   }
 
   initialize():void{
