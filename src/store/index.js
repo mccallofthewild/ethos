@@ -13,28 +13,33 @@ import {
   listen as reactListen,
 } from '../react'
 
+
 type storeParams = {
-  state?:Object,
-  getters?:Object,
-  setters?:Object,
-  actions?:Object, 
-  modules?:Object,
-  computed?:Object,
-  start?:(any)=>any
+  state?:ObjectType<any>,
+  getters?:ObjectType<anycb>,
+  setters?:ObjectType<anycb>,
+  actions?:ObjectType<anycb>, 
+  modules?:ObjectType<storeParams>,
+  computed?:ObjectType<anycb>,
+  start?:anycb;
 }
 
-class Store {
-  _state:Object;
-  _getters:Object;
-  _setters:Object;
-  _actions:Object;
-  _modules:Object;
-  _computed:Object;
-  start:?(any)=>any;
+export default class Store {
 
-  listeners:{
-    [string]:hivexReactComponent
-  };
+  _state:Object;
+  _getters:ObjectType<anycb>;
+  _setters:ObjectType<anycb>;
+  _actions:ObjectType<anycb>;
+  _modules:ObjectType<Store>;
+
+  _computed:ObjectType<Computed>;
+
+  start:anycb;
+
+  methodArgs:ObjectType<anycb>;
+
+  listeners:Map<prop, Component>;
+
   queue:Queue;
 
   constructor({
@@ -45,20 +50,34 @@ class Store {
     modules={},
     computed={},
     start,
-  }:storeParams) {
+  } : storeParams) {
 
-    this.listeners = {}
+    let initialized = false;
+
+    this.methodArgs = {
+      /*
+        Allows you to use object destructuring on methods
+        without losing scope of `this`
+      */
+      access: this.access.bind(this),
+      change: this.change.bind(this),
+      send: this.send.bind(this)
+    }
+
+    this.listeners = new Map();
+
+
     this.queue = new Queue() 
-    let count = 0;
+    let getterQueue = new Queue()
+
 
     const setterCb = prop =>{
       this.queue.add(prop)
     }
 
-    let getterQueue = new Queue()
  
     const getterCb = prop => {
-      getterQueue.add(prop)
+      if(!initialized) getterQueue.add(prop)
     }
 
     this._state = state;
@@ -66,43 +85,73 @@ class Store {
     this._setters = setters
     this._actions = actions
 
-    helpers.objectForEach(modules, (module, prop)=>{
-      modules[prop] = new Store(module)
-    })
-
-    this._modules = modules
-
-    /*
-      Defining getters that run `getterCb` on all
-      computed properties ensures that all 
-      interdependent computed props will
-      be reactive to other computed values changing.
-    */
-    let computedProperties : Array<prop> = Object.getOwnPropertyNames(computed);
+    this._modules = {}
+    this._computed = {}
     
-    computedProperties.forEach(
-      prop=>{
-        
-        this._state[prop] = null;
-
-      }
-    )
     
     hivexObserve(this._state, getterCb, setterCb)
 
+    /*
+      Initially, we will define computed properties
+      as getters in `state`. This is vital for making
+      interdependent computeds to work.
+
+      Additionally, these getters will each call
+      getterCb, passing it the name of the computed.
+      This ensures that computed properties can be 
+      added to other computeds' dependencies.
+
+      After clearing the descriptor, getterCb will no
+      longer run on computed properties. 
+
+
+      Once all the computeds are initialized and have 
+      registered their dependencies, we iterate over each
+      computed, clearing the original getter on state and
+      running `#update`, setting its property
+      in state to be the return value of its getter function.
+
+      Because the `#update`s run one at a time, there are never
+      any undefined dependencies during this process.
+
+      ** Simply using getters on state is inefficient
+      because it requires the process to run every time
+      the computed is asked for, as opposed to every time the
+      computed changes.
+    */
+
+    const computedGetters = {}
+
     helpers.objectForEach(computed, (func:anycb, name:prop)=>{
-      /*
-        The constructor saves itself in the dictionary,
-        so while it may seem strange, it's unnecessary to
-        assign the object to anything.
-      */
-      new Computed({
+      let myHivex = this;
+      computedGetters[name] = {
+        get(){
+          let val = func(myHivex._state)
+          getterCb(name);
+          return val;
+        },
+        configurable:true,
+      }
+    })
+
+    Object.defineProperties(this._state, computedGetters);
+
+
+    helpers.objectForEach(computed, (func:anycb, name:prop)=>{
+
+      this._computed[name] = new Computed({
           getter:func,
           name,
           getterQueue:getterQueue,
           setterQueue:this.queue,
           destination:this._state,
       })
+
+    });
+
+    helpers.objectForEach(computed, (func:anycb, name:prop)=>{
+      delete this._state[name];
+      this._computed[name].observe();
     })
 
     /*
@@ -110,20 +159,29 @@ class Store {
       is first constructed. It is passed the Hivex
       methods
     */
+
     if(start && typeof start == 'function') start(this.methodArgs)
+
+
+    /*
+
+      modules are registered last to ensure that if
+      any sub-modules traverse upwards in the module
+      tree, everything will already be configured in
+      its parent modules.
+
+    */
+
+    helpers.objectForEach(modules, (module, prop)=>{
+      this._modules[prop] = new Store(module)
+    })
+
+    initialized = true;
 
   }
 
-  get methodArgs() : Object {
-    /*
-      Allows you to use object destructuring on methods
-      without losing scope of `this`
-    */
-    return {
-      access: this.access.bind(this),
-      change: this.change.bind(this),
-      send: this.send.bind(this)
-    }
+  getState(){
+    return this._state;
   }
 
 
@@ -149,9 +207,8 @@ class Store {
 
   send(action:prop, payload:any) : any {
       let myHivex = this;
-      let arg = {
+      let methods = {
         ...this.methodArgs,
-        state: this._state,
         done() {
           myHivex.updateListeners()
         }
@@ -160,7 +217,7 @@ class Store {
       if(!func){
         throw new Error(`Action with name "${action}" does not exist.`)
       }
-      let res = func(arg, payload)
+      let res = func(this._state, methods, payload)
       return res;
   }
 
@@ -183,27 +240,11 @@ class Store {
     // if queue is empty, return.
     if(!this.queue.isPopulated) return;
 
-    for (let listenerKey in this.listeners) {
-
-      let listener = this.listeners[listenerKey]
-
-      if (listener._hivex_mounted && listener.state) {
-
-        let futureState = helpers.getStateUpdatesFromQuery(listener, this._state, this.queue)
-
-        /* 
-          If futureState is not empty, run setState (react method) on component
-          (update listener)
-        */
-
-        if (helpers.hasAProperty(futureState)) {
-
-          Object.assign(listener.state, futureState)
-
-          if( !listener._hivex_is_updating && listener._hivex_has_rendered) listener.forceUpdate.call(listener)
-        }
+    this.listeners.forEach(
+      listener=>{
+        listener.update()
       }
-    }
+    )
 
     this.queue.clear()
   }
@@ -277,15 +318,13 @@ class Store {
     // `formattedKeys` are the user-defined keys which alias properties on a hivex object 
     let formattedKeys = helpers.formatObjectQuery(query)
 
-    if(component.hivexStateKeys){
-      Object.assign(component.hivexStateKeys, formattedKeys)
+    if(component.stateQuery){
+      Object.assign(component, formattedKeys)
     }
-    else component.hivexStateKeys = formattedKeys;
+    else component.stateQuery = formattedKeys;
 
     this.listen(component)
 
     return helpers.formatObjectPieceForComponent(module._state, formattedKeys);
   }
 }
-
-export default Store

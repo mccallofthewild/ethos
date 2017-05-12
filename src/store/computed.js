@@ -64,7 +64,7 @@ class Computed {
    * updates the @prop destination with whatever the getter returns
    * adds prop to the setterQueue because it has been updated
    */
-  update():void{
+  update() : void {
 
     this.destination[this.name] = this.value
     this.setterQueue.add(this.name);
@@ -75,38 +75,52 @@ class Computed {
     return this.getter(this.destination)
   }
 
-  initialize():void{
+  initialize() : void {
     /*
       This is essential to how Computed works.
       It adds the listener to the getterQueue to find out
-      which properties it is dependent on.
+      which properties it is dependent upon.
       When property values change and, as a result,
       properties are added to the setterQueue,
       `setterListener` fires and checks if the property
-      is in the dependencies. If it is, the computed is
-      updated.
+      is in the dependencies. If it is, the computed updates.
     */
-    const getterListener = this.getterQueue.addListener(
+    const getterListener = this.getterQueue.use(
       item=>{
         this.dependencies.add(item)
     })
     
-    this.update()
+    /*
+     simply gets the value without updating state.
+    */
+    let value = this.value;
 
-    this.getterQueue.removeListener(getterListener)
+    this.getterQueue.retire(getterListener)
 
-    const setterListener = this.setterQueue.addListener(
-      item=>{
-        if(this.dependencies.has(item)) this.update()
+  }
+
+  observe(){
+
+    this.update();
+
+    // adds an event listener for each prop in `this.dependencies`
+    this.dependencies.forEach(
+      (item)=>{
+
+        this.setterQueue.addListener(
+          item,
+          ()=>{
+            this.update()
+          }
+        )
+
       }
     )
 
   }
-}
 
-export default Computed
-
-
-export {
+  
 
 }
+
+export default Computed;

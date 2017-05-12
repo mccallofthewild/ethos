@@ -13,10 +13,11 @@ var _ = require('../');
 var _utils = require('../utils');
 
 var methods = {
+
   /*
-  not necessary to overwrite getters because by the time the
-  getter can be run, you have already accessed the object on state,
-  and therefore already run the getter callback :)
+    not necessary to overwrite getters because by the time the
+    getter can be run, you have already accessed the object on state,
+    and therefore already run the getter callback :)
   */
 
   setters: ['copyWithin', 'fill', 'pop', 'push', 'reverse', 'shift', 'sort', 'splice', 'unshift']
@@ -36,7 +37,7 @@ function overwrite() {
   // where the methods will be written to
 
   var dest = obj;
-  console.log(obj, 'idkdude');
+
   methods.setters.forEach(function (setter) {
     var originalFn = dest[setter];
     if (!(typeof originalFn == 'function')) return;
@@ -50,7 +51,7 @@ function overwrite() {
       args.forEach(function ($arg) {
         if ((0, _utils.isObject)($arg)) (0, _.observeProperties)($arg, rootProp, getterCb, setterCb);
       });
-      console.log('running setter');
+
       var rtnVal = originalFn.apply(dest, args);
 
       // setterCb runs after all changes are made.
@@ -60,21 +61,5 @@ function overwrite() {
     };
   });
 
-  // methods.getters.forEach(
-  //   (getter:string)=>{
-  //     let originalFn = dest[getter]
-  //     if( !(typeof originalFn == 'function') ) return;
-
-  //     dest[getter] = function (...args){ 
-  //       // `this` is scoped to whatever the array is
-  //       console.log('running getter')
-  //       getterCb(rootProp)
-  //       return originalFn.apply(dest, args);
-  //     }
-  // })
-
-  // recursive
-  // observeProperties(obj, rootProp, getterCb, setterCb)
-  console.log('watching stuff');
   return obj;
 }

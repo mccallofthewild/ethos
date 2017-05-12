@@ -66,18 +66,29 @@ var Store = function () {
 
     _classCallCheck(this, Store);
 
-    this.listeners = {};
+    var initialized = false;
+
+    this.methodArgs = {
+      /*
+        Allows you to use object destructuring on methods
+        without losing scope of `this`
+      */
+      access: this.access.bind(this),
+      change: this.change.bind(this),
+      send: this.send.bind(this)
+    };
+
+    this.listeners = new Map();
+
     this.queue = new _queue2.default();
-    var count = 0;
+    var getterQueue = new _queue2.default();
 
     var setterCb = function setterCb(prop) {
       _this.queue.add(prop);
     };
 
-    var getterQueue = new _queue2.default();
-
     var getterCb = function getterCb(prop) {
-      getterQueue.add(prop);
+      if (!initialized) getterQueue.add(prop);
     };
 
     this._state = state;
@@ -85,34 +96,54 @@ var Store = function () {
     this._setters = setters;
     this._actions = actions;
 
-    helpers.objectForEach(modules, function (module, prop) {
-      modules[prop] = new Store(module);
-    });
-
-    this._modules = modules;
-
-    /*
-      Defining getters that run `getterCb` on all
-      computed properties ensures that all 
-      interdependent computed props will
-      be reactive to other computed values changing.
-    */
-    var computedProperties = Object.getOwnPropertyNames(computed);
-
-    computedProperties.forEach(function (prop) {
-
-      _this._state[prop] = null;
-    });
+    this._modules = {};
+    this._computed = {};
 
     (0, _observe.hivexObserve)(this._state, getterCb, setterCb);
 
+    /*
+      Initially, we will define computed properties
+      as getters in `state`. This is vital for making
+      interdependent computeds to work.
+       Additionally, these getters will each call
+      getterCb, passing it the name of the computed.
+      This ensures that computed properties can be 
+      added to other computeds' dependencies.
+       After clearing the descriptor, getterCb will no
+      longer run on computed properties. 
+        Once all the computeds are initialized and have 
+      registered their dependencies, we iterate over each
+      computed, clearing the original getter on state and
+      running `#update`, setting its property
+      in state to be the return value of its getter function.
+       Because the `#update`s run one at a time, there are never
+      any undefined dependencies during this process.
+       ** Simply using getters on state is inefficient
+      because it requires the process to run every time
+      the computed is asked for, as opposed to every time the
+      computed changes.
+    */
+
+    var computedGetters = {};
+
     helpers.objectForEach(computed, function (func, name) {
-      /*
-        The constructor saves itself in the dictionary,
-        so while it may seem strange, it's unnecessary to
-        assign the object to anything.
-      */
-      new _computed2.default({
+      var myHivex = _this;
+      computedGetters[name] = {
+        get: function get() {
+          var val = func(myHivex._state);
+          getterCb(name);
+          return val;
+        },
+
+        configurable: true
+      };
+    });
+
+    Object.defineProperties(this._state, computedGetters);
+
+    helpers.objectForEach(computed, function (func, name) {
+
+      _this._computed[name] = new _computed2.default({
         getter: func,
         name: name,
         getterQueue: getterQueue,
@@ -121,15 +152,39 @@ var Store = function () {
       });
     });
 
+    helpers.objectForEach(computed, function (func, name) {
+      delete _this._state[name];
+      _this._computed[name].observe();
+    });
+
     /*
       `start` is a function that runs when the Store
       is first constructed. It is passed the Hivex
       methods
     */
+
     if (start && typeof start == 'function') start(this.methodArgs);
+
+    /*
+       modules are registered last to ensure that if
+      any sub-modules traverse upwards in the module
+      tree, everything will already be configured in
+      its parent modules.
+     */
+
+    helpers.objectForEach(modules, function (module, prop) {
+      _this._modules[prop] = new Store(module);
+    });
+
+    initialized = true;
   }
 
   _createClass(Store, [{
+    key: 'getState',
+    value: function getState() {
+      return this._state;
+    }
+  }, {
     key: 'change',
     value: function change(setter, payload) {
       var func = this._setters[setter];
@@ -155,8 +210,7 @@ var Store = function () {
     key: 'send',
     value: function send(action, payload) {
       var myHivex = this;
-      var arg = _extends({}, this.methodArgs, {
-        state: this._state,
+      var methods = _extends({}, this.methodArgs, {
         done: function done() {
           myHivex.updateListeners();
         }
@@ -165,7 +219,7 @@ var Store = function () {
       if (!func) {
         throw new Error('Action with name "' + action + '" does not exist.');
       }
-      var res = func(arg, payload);
+      var res = func(this._state, methods, payload);
       return res;
     }
   }, {
@@ -190,27 +244,9 @@ var Store = function () {
       // if queue is empty, return.
       if (!this.queue.isPopulated) return;
 
-      for (var listenerKey in this.listeners) {
-
-        var listener = this.listeners[listenerKey];
-
-        if (listener._hivex_mounted && listener.state) {
-
-          var futureState = helpers.getStateUpdatesFromQuery(listener, this._state, this.queue);
-
-          /* 
-            If futureState is not empty, run setState (react method) on component
-            (update listener)
-          */
-
-          if (helpers.hasAProperty(futureState)) {
-
-            Object.assign(listener.state, futureState);
-
-            if (!listener._hivex_is_updating && listener._hivex_has_rendered) listener.forceUpdate.call(listener);
-          }
-        }
-      }
+      this.listeners.forEach(function (listener) {
+        listener.update();
+      });
 
       this.queue.clear();
     }
@@ -322,26 +358,13 @@ var Store = function () {
       // `formattedKeys` are the user-defined keys which alias properties on a hivex object 
       var formattedKeys = helpers.formatObjectQuery(query);
 
-      if (component.hivexStateKeys) {
-        Object.assign(component.hivexStateKeys, formattedKeys);
-      } else component.hivexStateKeys = formattedKeys;
+      if (component.stateQuery) {
+        Object.assign(component, formattedKeys);
+      } else component.stateQuery = formattedKeys;
 
       this.listen(component);
 
       return helpers.formatObjectPieceForComponent(module._state, formattedKeys);
-    }
-  }, {
-    key: 'methodArgs',
-    get: function get() {
-      /*
-        Allows you to use object destructuring on methods
-        without losing scope of `this`
-      */
-      return {
-        access: this.access.bind(this),
-        change: this.change.bind(this),
-        send: this.send.bind(this)
-      };
     }
   }]);
 

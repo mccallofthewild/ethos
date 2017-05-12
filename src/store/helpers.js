@@ -6,7 +6,7 @@ import Store from './index'
 import SetDictionary from './setdictionary'
 import Computed from './computed'
 
-function formatObjectQuery(props:Object | Array<string>) {
+export function formatObjectQuery(props:ObjectType<prop> | Array<prop>) {
 	/*
 
 	  Formats array of object props into object with 
@@ -32,7 +32,7 @@ function formatObjectQuery(props:Object | Array<string>) {
 	return formatted;
 }
 
-function formatObjectPieceForComponent(obj:Object, propDictionary:Object) {
+export function formatObjectPieceForComponent(obj:Object, propDictionary:Object) {
 	/*
 	  Loops through keys in formatted props passed to `openState`
 	  and uses their values, the actual `state` properties,
@@ -47,8 +47,12 @@ function formatObjectPieceForComponent(obj:Object, propDictionary:Object) {
 	return piece;
 }
 
-function updateAllComputedInSet(computedSet:Set<Computed>){
-	computedSet.forEach(c=>c.update())
+export function updateAllComputedInSet(computedSet:Set<Computed>){
+
+	computedSet.forEach(
+		c => c.update()
+	)
+
 }
 
 /**
@@ -61,35 +65,16 @@ function updateAllComputedInSet(computedSet:Set<Computed>){
  * 
  * 
  */
-function getStateUpdatesFromQuery(listener:Object, state:Object, queue:Queue) : Object {
-	console.log(JSON.stringify(queue))
-	let futureState = {}
-
-	for (let propName in listener.hivexStateKeys) {
-
-		let stateProp = listener.hivexStateKeys[propName]
-
-		if (queue.has(stateProp)) {
-
-				futureState[propName] = state[stateProp];
-
-		}
-
-	}
-
-	return futureState;
-
-}
 
 
-function clearObject(obj:Object){
+export function clearObject(obj:Object){
 	for (let prop in obj) {
 		delete obj[prop]
 	}
 }
 
 
-function moduleFromQuery(moduleQuery:string, store:Store){
+export function moduleFromQuery(moduleQuery:string, store:Store){
 
 	/*
 		takes in module query in the form of "mymodule.nestedmodule.deeplynestedmodule"
@@ -129,7 +114,7 @@ function getModuleState({
 	let formattedQuery = formatObjectQuery(stateQuery);
 }
 
-function parseOpenArgs(args:any){
+export function parseOpenArgs(args:openArgs) : Array<any> {
 		/*
 			- The purpose of this function is to
 				take in an array of arguments passed to 
@@ -138,12 +123,12 @@ function parseOpenArgs(args:any){
 				the requested module, the query, and the component
 				respectively.
 		*/
-		let [module, query, component] = [null, null, null]
+		let module, query, component;
 
 		// if module is root module, first argument can be query.
 		if(typeof args[0] == "string"){
 
-			[module, query, component] = args
+			[module, query, component] = args;
 
 		}else{
 
@@ -158,14 +143,14 @@ function parseOpenArgs(args:any){
 		]
 }
 
-function objectForEach(obj:Object, cb:(...any:any)=>any){
+export function objectForEach(obj:Object, cb:(...any:any)=>any){
 	for(let prop in obj){
 		let val = obj[prop]
 		cb(val, prop)
 	}
 }
 
-function hasAProperty(obj:Object){
+export function hasAProperty(obj:Object) : boolean {
 	let result : boolean = false;
 	for(let prop in obj){
 		result = true;
@@ -173,15 +158,59 @@ function hasAProperty(obj:Object){
 	}
 	return result;
 }
+/*
 
-export {
-	formatObjectPieceForComponent,
-	formatObjectQuery,
-	getStateUpdatesFromQuery,
-	getModuleState,
-	moduleFromQuery,
-	clearObject,
-	parseOpenArgs,
-	objectForEach,
-	hasAProperty,
+	Flow bug fix for Object#getOwnPropertyDescriptors
+
+*/
+
+export function getOwnPropertyDescriptors(obj:Object) : { [prop]:Object } {
+	let descriptors = {}
+	for(let prop in obj){
+		descriptors[prop] = Object.getOwnPropertyDescriptor(obj)
+	}
+	return descriptors;
 }
+
+export function clearDescriptor(obj:Object, prop:prop){
+		let value = obj[prop];
+		let {
+			enumerable,
+		} = Object.getOwnPropertyDescriptor(obj, prop);
+
+		let descriptor = {
+			value,
+			writeable:true,
+			enumerable,
+			configurable:true,
+		}
+
+		Object.defineProperty(obj, prop, descriptor);
+}
+
+export function clearDescriptors(obj:Object, properties:Array<prop>){
+	let descriptors = {}
+	let originalDescriptors = getOwnPropertyDescriptors(obj);
+	let length = properties.length;
+	properties.forEach(
+		prop=>{
+			let value = obj[prop];
+			let {
+				writeable,
+				enumerable,
+			} = originalDescriptors[prop];
+
+			descriptors[prop] = {
+				value,
+				writeable,
+				enumerable,
+				configurable:true,
+			}
+		}
+	)
+
+	Object.defineProperties(obj, descriptors);
+
+}
+
+

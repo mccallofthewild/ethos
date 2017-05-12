@@ -9,6 +9,14 @@ var _console = require('../misc/console');
 
 var _console2 = _interopRequireDefault(_console);
 
+var _component = require('../render/component');
+
+var _component2 = _interopRequireDefault(_component);
+
+var _store = require('../store');
+
+var _store2 = _interopRequireDefault(_store);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function listen(component, context) {
@@ -22,17 +30,23 @@ function listen(component, context) {
       forceUpdateFunc = component.forceUpdate;
 
 
+  var hivexComponent = new _component2.default({
+
+    name: component.constructor.name,
+    destination: component.state,
+    render: function render() {
+      component.forceUpdate();
+    }
+
+  }, context);
+
   component.componentDidMount = function () {
     for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
       args[_key] = arguments[_key];
     }
 
-    component._hivex_has_rendered = true;
-    component._hivex_id = component.constructor.name + '/timestamp/' + Date.now() + '/id/' + Math.round(Math.random() * 10000000);
-    component._hivex_mounted = true;
-    component._hivex_mounted_at = new Date();
-    myHivex.listeners[component._hivex_id] = component;
-    myHivex.updateListeners();
+    hivexComponent.mount();
+
     try {
       if (mountFunc) mountFunc.apply(component, args);
     } catch (error) {
@@ -52,14 +66,16 @@ function listen(component, context) {
       args[_key2] = arguments[_key2];
     }
 
+    hivexComponent.unmount();
+
     try {
+
       if (unmountFunc) unmountFunc.apply(component, args);
     } catch (error) {
       _console2.default.error(error);
     }
-    component._hivex_has_rendered = false;
-    component._hivex_mounted = false;
-    delete myHivex.listeners[component._hivex_id];
+
+    myHivex.listeners.delete(component.__hivex.__id);
   };
 
   component.componentWillUpdate = function () {
@@ -72,7 +88,7 @@ function listen(component, context) {
     } catch (error) {
       _console2.default.error(error);
     }
-    component._hivex_is_updating = true;
+    hivexComponent.updating = true;
   };
 
   component.componentDidUpdate = function () {
@@ -85,15 +101,11 @@ function listen(component, context) {
     } catch (error) {
       _console2.default.error(error);
     }
-    component._hivex_is_updating = false;
+    component.__hivex.updating = false;
   };
 
-  component.forceUpdate = function () {
-    for (var _len5 = arguments.length, args = Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
-      args[_key5] = arguments[_key5];
-    }
-
-    component._hivex_is_updating = true;
-    forceUpdateFunc.apply(component, args);
-  };
+  // component.forceUpdate = (...args) => {
+  //   component.__hivex.updating = true;
+  //   forceUpdateFunc.apply(component, args)
+  // }
 }

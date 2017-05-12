@@ -32,10 +32,11 @@ export default (...observeArgs:observeArgs)=>{
 
         let originalSet = obj.set
         obj.set = (key, value)=>{
-          console.log(value, 'set')
+
           if( isObject(value) ){
             observeProperties(value, rootProp, getterCb, setterCb)
           }
+
           try{
             let rtnVal = originalSet.apply(originalSet, [key, value]);
 
@@ -49,7 +50,9 @@ export default (...observeArgs:observeArgs)=>{
 
         obj.forEach(
           (value, key, map)=>{
-            if(isObject(value)) observeProperties(value, rootProp, getterCb, setterCb)
+            if( isObject(value) ){
+              observeProperties(value, rootProp, getterCb, setterCb)
+            }
           }
         )
 

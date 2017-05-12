@@ -3,9 +3,20 @@
 Object.defineProperty(exports, "__esModule", {
 	value: true
 });
-exports.hasAProperty = exports.objectForEach = exports.parseOpenArgs = exports.clearObject = exports.moduleFromQuery = exports.getModuleState = exports.getStateUpdatesFromQuery = exports.formatObjectQuery = exports.formatObjectPieceForComponent = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+exports.formatObjectQuery = formatObjectQuery;
+exports.formatObjectPieceForComponent = formatObjectPieceForComponent;
+exports.updateAllComputedInSet = updateAllComputedInSet;
+exports.clearObject = clearObject;
+exports.moduleFromQuery = moduleFromQuery;
+exports.parseOpenArgs = parseOpenArgs;
+exports.objectForEach = objectForEach;
+exports.hasAProperty = hasAProperty;
+exports.getOwnPropertyDescriptors = getOwnPropertyDescriptors;
+exports.clearDescriptor = clearDescriptor;
+exports.clearDescriptors = clearDescriptors;
 
 var _exceptions = require('./exceptions');
 
@@ -63,14 +74,15 @@ function formatObjectPieceForComponent(obj, propDictionary) {
  */
 	var piece = {};
 	for (var name in propDictionary) {
-		var prop = propDictionary[name];
-		var value = obj[prop];
+		var _prop = propDictionary[name];
+		var value = obj[_prop];
 		piece[name] = value;
 	}
 	return piece;
 }
 
 function updateAllComputedInSet(computedSet) {
+
 	computedSet.forEach(function (c) {
 		return c.update();
 	});
@@ -86,26 +98,10 @@ function updateAllComputedInSet(computedSet) {
  * 
  * 
  */
-function getStateUpdatesFromQuery(listener, state, queue) {
-	console.log(JSON.stringify(queue));
-	var futureState = {};
-
-	for (var propName in listener.hivexStateKeys) {
-
-		var stateProp = listener.hivexStateKeys[propName];
-
-		if (queue.has(stateProp)) {
-
-			futureState[propName] = state[stateProp];
-		}
-	}
-
-	return futureState;
-}
 
 function clearObject(obj) {
-	for (var prop in obj) {
-		delete obj[prop];
+	for (var _prop2 in obj) {
+		delete obj[_prop2];
 	}
 }
 
@@ -152,12 +148,11 @@ function parseOpenArgs(args) {
  		the requested module, the query, and the component
  		respectively.
  */
-	var module = null,
-	    query = null,
-	    component = null;
+	var module = void 0,
+	    query = void 0,
+	    component = void 0;
 
 	// if module is root module, first argument can be query.
-
 	if (typeof args[0] == "string") {
 		var _args = _slicedToArray(args, 3);
 
@@ -178,27 +173,68 @@ function parseOpenArgs(args) {
 }
 
 function objectForEach(obj, cb) {
-	for (var prop in obj) {
-		var val = obj[prop];
-		cb(val, prop);
+	for (var _prop3 in obj) {
+		var val = obj[_prop3];
+		cb(val, _prop3);
 	}
 }
 
 function hasAProperty(obj) {
 	var result = false;
-	for (var prop in obj) {
+	for (var _prop4 in obj) {
 		result = true;
 		break;
 	}
 	return result;
 }
+/*
 
-exports.formatObjectPieceForComponent = formatObjectPieceForComponent;
-exports.formatObjectQuery = formatObjectQuery;
-exports.getStateUpdatesFromQuery = getStateUpdatesFromQuery;
-exports.getModuleState = getModuleState;
-exports.moduleFromQuery = moduleFromQuery;
-exports.clearObject = clearObject;
-exports.parseOpenArgs = parseOpenArgs;
-exports.objectForEach = objectForEach;
-exports.hasAProperty = hasAProperty;
+	Flow bug fix for Object#getOwnPropertyDescriptors
+
+*/
+
+function getOwnPropertyDescriptors(obj) {
+	var descriptors = {};
+	for (var _prop5 in obj) {
+		descriptors[_prop5] = Object.getOwnPropertyDescriptor(obj);
+	}
+	return descriptors;
+}
+
+function clearDescriptor(obj, prop) {
+	var value = obj[prop];
+
+	var _Object$getOwnPropert = Object.getOwnPropertyDescriptor(obj, prop),
+	    enumerable = _Object$getOwnPropert.enumerable;
+
+	var descriptor = {
+		value: value,
+		writeable: true,
+		enumerable: enumerable,
+		configurable: true
+	};
+
+	Object.defineProperty(obj, prop, descriptor);
+}
+
+function clearDescriptors(obj, properties) {
+	var descriptors = {};
+	var originalDescriptors = getOwnPropertyDescriptors(obj);
+	var length = properties.length;
+	properties.forEach(function (prop) {
+		var value = obj[prop];
+		var _originalDescriptors$ = originalDescriptors[prop],
+		    writeable = _originalDescriptors$.writeable,
+		    enumerable = _originalDescriptors$.enumerable;
+
+
+		descriptors[prop] = {
+			value: value,
+			writeable: writeable,
+			enumerable: enumerable,
+			configurable: true
+		};
+	});
+
+	Object.defineProperties(obj, descriptors);
+}

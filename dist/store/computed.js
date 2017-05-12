@@ -84,23 +84,36 @@ var Computed = function () {
       /*
         This is essential to how Computed works.
         It adds the listener to the getterQueue to find out
-        which properties it is dependent on.
+        which properties it is dependent upon.
         When property values change and, as a result,
         properties are added to the setterQueue,
         `setterListener` fires and checks if the property
-        is in the dependencies. If it is, the computed is
-        updated.
+        is in the dependencies. If it is, the computed updates.
       */
-      var getterListener = this.getterQueue.addListener(function (item) {
+      var getterListener = this.getterQueue.use(function (item) {
         _this.dependencies.add(item);
       });
 
+      /*
+       simply gets the value without updating state.
+      */
+      var value = this.value;
+
+      this.getterQueue.retire(getterListener);
+    }
+  }, {
+    key: 'observe',
+    value: function observe() {
+      var _this2 = this;
+
       this.update();
 
-      this.getterQueue.removeListener(getterListener);
+      // adds an event listener for each prop in `this.dependencies`
+      this.dependencies.forEach(function (item) {
 
-      var setterListener = this.setterQueue.addListener(function (item) {
-        if (_this.dependencies.has(item)) _this.update();
+        _this2.setterQueue.addListener(item, function () {
+          _this2.update();
+        });
       });
     }
   }, {

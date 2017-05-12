@@ -62,13 +62,12 @@ export function observeProperties(...args:observeArgs) : Object {
     */
     const blacklist = /(Map|Array)/
 
-    let protoString = obj.__proto__.constructor.name;
+    const protoString = obj.__proto__.constructor.name;
 
-    if( blacklist.test(protoString) ) {
-        console.log(obj)
+    const isBlacklisted = blacklist.test(protoString);
+    
+    if( isBlacklisted ) {
         obj = specials[protoString](...args)
-        console.log(obj)
-
     }
     
     return obj;

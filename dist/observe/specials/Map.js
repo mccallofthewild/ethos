@@ -42,10 +42,11 @@ exports.default = function () {
 
   var originalSet = obj.set;
   obj.set = function (key, value) {
-    console.log(value, 'set');
+
     if ((0, _utils.isObject)(value)) {
       (0, _.observeProperties)(value, rootProp, getterCb, setterCb);
     }
+
     try {
       var rtnVal = originalSet.apply(originalSet, [key, value]);
 
@@ -56,7 +57,9 @@ exports.default = function () {
   };
 
   obj.forEach(function (value, key, map) {
-    if ((0, _utils.isObject)(value)) (0, _.observeProperties)(value, rootProp, getterCb, setterCb);
+    if ((0, _utils.isObject)(value)) {
+      (0, _.observeProperties)(value, rootProp, getterCb, setterCb);
+    }
   });
 
   return obj;

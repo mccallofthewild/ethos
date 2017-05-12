@@ -72,10 +72,10 @@ function observeProperties() {
 
     var protoString = obj.__proto__.constructor.name;
 
-    if (blacklist.test(protoString)) {
-        console.log(obj);
+    var isBlacklisted = blacklist.test(protoString);
+
+    if (isBlacklisted) {
         obj = _specials2.default[protoString].apply(_specials2.default, _toConsumableArray(args));
-        console.log(obj);
     }
 
     return obj;
