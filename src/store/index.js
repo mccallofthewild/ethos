@@ -229,9 +229,9 @@ export default class Store {
     */
     return helpers.moduleFromQuery(moduleQuery, this);
   }
-
-  listen(component:reactComponent) : void {
-    reactListen(component, this)
+ 
+  listen(component:reactComponent, stateQuery) : void {
+    reactListen(component, this, stateQuery);
   }
 
 
@@ -318,13 +318,22 @@ export default class Store {
     // `formattedKeys` are the user-defined keys which alias properties on a hivex object 
     let formattedKeys = helpers.formatObjectQuery(query)
 
-    if(component.stateQuery){
-      Object.assign(component, formattedKeys)
+    let hivexData = component.__hivex;
+
+    let stateQuery;
+
+    if(hivexData && hivexData.stateQuery){
+      stateQuery = Object.assign(component.__hivex.stateQuery, formattedKeys)
     }
-    else component.stateQuery = formattedKeys;
+    else stateQuery = formattedKeys;
 
-    this.listen(component)
+    this.listen(component, stateQuery)
 
-    return helpers.formatObjectPieceForComponent(module._state, formattedKeys);
+    let staticState : Object = helpers.formatObjectPieceForComponent(module._state, formattedKeys);
+
+    return helpers.getterProxy(staticState, (obj, prop)=>{
+      return this._state[prop];
+    })
+
   }
 }

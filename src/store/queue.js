@@ -75,12 +75,8 @@ class Queue {
      Not neccessary to loop through entire object
      (Object.keys) to do this
     */
-    let populated = false;
-    for( let prop in this.container ){
-      populated = true;
-      break;
-    }
-    return populated;
+
+    return !!this.container.size;
   }
   
   /**

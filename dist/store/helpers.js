@@ -17,6 +17,7 @@ exports.hasAProperty = hasAProperty;
 exports.getOwnPropertyDescriptors = getOwnPropertyDescriptors;
 exports.clearDescriptor = clearDescriptor;
 exports.clearDescriptors = clearDescriptors;
+exports.getterProxy = getterProxy;
 
 var _exceptions = require('./exceptions');
 
@@ -66,6 +67,14 @@ function formatObjectQuery(props) {
 	return formatted;
 }
 
+/**
+ * Returns an object of getters;
+ * 
+ * @export
+ * @param {Object} obj 
+ * @param {Object} propDictionary 
+ * @returns 
+ */
 function formatObjectPieceForComponent(obj, propDictionary) {
 	/*
    Loops through keys in formatted props passed to `openState`
@@ -237,4 +246,24 @@ function clearDescriptors(obj, properties) {
 	});
 
 	Object.defineProperties(obj, descriptors);
+}
+
+function getterProxy(obj, getter) {
+	var destination = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
+	var descriptors = {};
+	var properties = Object.getOwnPropertyNames(obj) || [];
+	var length = properties.length;
+	properties.forEach(function (prop) {
+
+		descriptors[prop] = {
+			configurable: false,
+			get: function get() {
+				return getter(obj, prop);
+			}
+		};
+	});
+
+	Object.defineProperties(destination, descriptors);
+	return destination;
 }

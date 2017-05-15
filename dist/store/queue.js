@@ -237,12 +237,8 @@ var Queue = function () {
        Not neccessary to loop through entire object
        (Object.keys) to do this
       */
-      var populated = false;
-      for (var _prop in this.container) {
-        populated = true;
-        break;
-      }
-      return populated;
+
+      return !!this.container.size;
     }
   }]);
 

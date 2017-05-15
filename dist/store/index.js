@@ -234,8 +234,8 @@ var Store = function () {
     }
   }, {
     key: 'listen',
-    value: function listen(component) {
-      (0, _react.listen)(component, this);
+    value: function listen(component, stateQuery) {
+      (0, _react.listen)(component, this, stateQuery);
     }
   }, {
     key: 'updateListeners',
@@ -336,6 +336,8 @@ var Store = function () {
   }, {
     key: 'openState',
     value: function openState() {
+      var _this2 = this;
+
       for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
         args[_key3] = arguments[_key3];
       }
@@ -358,13 +360,21 @@ var Store = function () {
       // `formattedKeys` are the user-defined keys which alias properties on a hivex object 
       var formattedKeys = helpers.formatObjectQuery(query);
 
-      if (component.stateQuery) {
-        Object.assign(component, formattedKeys);
-      } else component.stateQuery = formattedKeys;
+      var hivexData = component.__hivex;
 
-      this.listen(component);
+      var stateQuery = void 0;
 
-      return helpers.formatObjectPieceForComponent(module._state, formattedKeys);
+      if (hivexData && hivexData.stateQuery) {
+        stateQuery = Object.assign(component.__hivex.stateQuery, formattedKeys);
+      } else stateQuery = formattedKeys;
+
+      this.listen(component, stateQuery);
+
+      var staticState = helpers.formatObjectPieceForComponent(module._state, formattedKeys);
+
+      return helpers.getterProxy(staticState, function (obj, prop) {
+        return _this2._state[prop];
+      });
     }
   }]);
 

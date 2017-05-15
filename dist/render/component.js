@@ -45,8 +45,6 @@ var Component = function () {
         mounted = _ref$mounted === undefined ? true : _ref$mounted,
         _ref$updating = _ref.updating,
         updating = _ref$updating === undefined ? false : _ref$updating,
-        _ref$destination = _ref.destination,
-        destination = _ref$destination === undefined ? {} : _ref$destination,
         render = _ref.render;
 
     _classCallCheck(this, Component);
@@ -57,8 +55,6 @@ var Component = function () {
     this.updating = updating;
 
     this.stateQuery = stateQuery;
-
-    this.destination = destination;
 
     this.store = store;
 
@@ -79,8 +75,9 @@ var Component = function () {
     key: 'mount',
     value: function mount() {
       this.store.listeners.set(this.__id, this);
-      this.update();
       this.mounted = true;
+      this.rendered = true;
+      this.update();
     }
   }, {
     key: 'unmount',
@@ -90,42 +87,8 @@ var Component = function () {
       this.store.listeners.delete(this.__id, this);
     }
   }, {
-    key: 'queryState',
-    value: function queryState() {
-
-      var futureState = {};
-      var state = this.store.getState();
-
-      for (var propName in this.stateQuery) {
-
-        var stateProp = this.stateQuery[propName];
-
-        if (this.store.queue.has(stateProp)) {
-
-          futureState[propName] = state[stateProp];
-        }
-      }
-
-      return futureState;
-    }
-  }, {
-    key: 'hydrate',
-    value: function hydrate() {
-
-      if (this.mounted && this.destination) {
-
-        var futureState = this.queryState();
-
-        if (helpers.hasAProperty(futureState)) {
-
-          Object.assign(this.destination, futureState);
-        }
-      }
-    }
-  }, {
     key: 'update',
     value: function update() {
-      this.hydrate();
       if (!this.updating && this.rendered) this.render();
     }
   }]);

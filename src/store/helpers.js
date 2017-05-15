@@ -32,6 +32,14 @@ export function formatObjectQuery(props:ObjectType<prop> | Array<prop>) {
 	return formatted;
 }
 
+/**
+ * Returns an object of getters;
+ * 
+ * @export
+ * @param {Object} obj 
+ * @param {Object} propDictionary 
+ * @returns 
+ */
 export function formatObjectPieceForComponent(obj:Object, propDictionary:Object) {
 	/*
 	  Loops through keys in formatted props passed to `openState`
@@ -212,5 +220,43 @@ export function clearDescriptors(obj:Object, properties:Array<prop>){
 	Object.defineProperties(obj, descriptors);
 
 }
+
+export function getterProxy(obj:Object, getter:anycb, destination ?: Object = {}) : Object {
+	let descriptors = {}
+	let properties = Object.getOwnPropertyNames(obj) || [];
+	let length = properties.length;
+	properties.forEach(
+		prop=>{
+
+			descriptors[prop] = {
+				configurable:false,
+				get(){
+					return getter(obj, prop)
+				}
+			}
+
+		}
+	)
+
+	Object.defineProperties(destination, descriptors);
+	return destination;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

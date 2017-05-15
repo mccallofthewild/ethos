@@ -19,6 +19,7 @@ export default class Component {
   rendered:boolean;
   destination:Object;
   render:anycb;
+  reactComponent:reactComponent;
 
   store:Store;
  
@@ -29,7 +30,6 @@ export default class Component {
     rendered=true,
     mounted=true,
     updating=false,
-    destination={},
     render,
 
   } : {
@@ -39,7 +39,6 @@ export default class Component {
     mounted?:boolean,
     updating?:boolean,
     rendered?:boolean,
-    destination?:Object,
     render:anycb,
 
   }, store:Store){
@@ -51,8 +50,6 @@ export default class Component {
 
     this.stateQuery = stateQuery;
 
-    this.destination = destination;
-
     this.store = store;
 
     if(typeof render !== 'function'){
@@ -60,7 +57,6 @@ export default class Component {
     }
 
     this.render = render;
-    
   }
 
   defineLifecycleMethod(methodName:string, fn:anycb, context:any){
@@ -74,8 +70,9 @@ export default class Component {
 
   mount(){
     this.store.listeners.set(this.__id, this)
-    this.update();
     this.mounted = true;
+    this.rendered = true;
+    this.update();
   }
 
   unmount(){
@@ -83,46 +80,8 @@ export default class Component {
     this.rendered = false;
     this.store.listeners.delete(this.__id, this);
   }
-  
-  queryState() : Object {
-
-    let futureState = {}
-    let state = this.store.getState();
-
-    for (let propName in this.stateQuery) {
-
-      let stateProp = this.stateQuery[propName]
-
-      if (this.store.queue.has(stateProp)) {
-
-          futureState[propName] = state[stateProp];
-
-      }
-
-    }
-
-    return futureState;
-
-  }
-
-
-  hydrate(){
-
-      if (this.mounted && this.destination) {
-
-        let futureState = this.queryState()
-
-        if (helpers.hasAProperty(futureState)) {
-
-          Object.assign(this.destination, futureState)
-
-        }
-      }
-
-  }
 
   update(){
-      this.hydrate()
       if( !this.updating && this.rendered) this.render()
   }
   
