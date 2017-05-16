@@ -1,2 +1,5 @@
-import Hivex from './hivex';
-export default Hivex;
+import Store from './store'
+
+module.exports =  {
+  Store:Store,
+}

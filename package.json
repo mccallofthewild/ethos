@@ -2,30 +2,38 @@
   "name": "hivex",
   "version": "1.0.1",
   "description": "React state management, for humans.",
-  "main": "dist/hivex.js",
+  "main": "dist/index.js",
+  "unpkg": "dist/index.js",
+  "module": "dist/index.js",
   "repository": {
     "url": "https://github.com/mccallofthewild/hivex.git",
     "type": "git"
   },
   "scripts": {
-    "build": "babel src --out-dir dist",
+    "build": "yarn run webpack --  --progress --colors",
+    "watch": "yarn run webpack --  --progress --colors --watch",
     "prepublish": "yarn run build",
-    "dev": "nodemon --watch ./src/  --exec \"yarn run flow && yarn run build\" ",
+    "dev": "yarn run watch",
     "test": "mocha \"tests/**/*.spec.js\" --compilers js:babel-core/register "
   },
   "author": "McCall Alexander <mccallalexander96@gmail.com>",
   "license": "MIT",
   "devDependencies": {
     "babel-cli": "^6.24.1",
+    "babel-loader": "^7.0.0",
     "babel-plugin-transform-object-rest-spread": "^6.23.0",
     "babel-preset-es2015": "^6.24.0",
     "babel-preset-es2017": "^6.24.1",
     "babel-preset-flow": "^6.23.0",
     "babel-preset-stage-2": "^6.22.0",
     "chai": "^3.5.0",
+    "flow-babel-webpack-plugin": "^1.0.1",
     "flow-bin": "^0.44.0",
+    "flowtype-loader": "^0.2.2",
     "mocha": "^3.3.0",
-    "nodemon": "^1.11.0"
+    "nodemon": "^1.11.0",
+    "webpack": "^2.5.1",
+    "webpack-dev-server": "^2.4.5"
   },
   "dependencies": {}
 }

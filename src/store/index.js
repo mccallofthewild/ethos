@@ -21,6 +21,7 @@ type storeParams = {
   actions?:ObjectType<anycb>, 
   modules?:ObjectType<storeParams>,
   computed?:ObjectType<anycb>,
+  watchers?:ObjectType<anycb>,
   start?:anycb;
 }
 
@@ -31,12 +32,15 @@ export default class Store {
   _setters:ObjectType<anycb>;
   _actions:ObjectType<anycb>;
   _modules:ObjectType<Store>;
-
   _computed:ObjectType<Computed>;
+
+  getters:Object;
+  actions:Object;
+  setters:Object;
 
   start:anycb;
 
-  methodArgs:ObjectType<anycb>;
+  methodArgs:Object;
 
   listeners:Map<prop, Component>;
 
@@ -49,10 +53,25 @@ export default class Store {
     actions={},
     modules={},
     computed={},
+    watchers={},
     start,
   } : storeParams) {
 
     let initialized = false;
+    /*
+      makes actions, getters and setters easily accessable on the `#actions`
+      and `#setters` properties.
+    */
+    
+    this.actions = {}
+    for(let prop in actions) this.actions[prop] = (payload)=>this.send(prop, payload)
+    
+    this.setters = {}
+    for(let prop in setters) this.setters[prop] = (payload)=>this.change(prop, payload)
+    
+    this.getters = {}
+    for(let prop in getters) this.getters[prop] = (payload)=>this.access(prop, payload)
+    
 
     this.methodArgs = {
       /*
@@ -61,11 +80,13 @@ export default class Store {
       */
       access: this.access.bind(this),
       change: this.change.bind(this),
-      send: this.send.bind(this)
+      send: this.send.bind(this),
+      getters: this.getters,
+      setters: this.setters,
+      actions: this.actions,
     }
 
     this.listeners = new Map();
-
 
     this.queue = new Queue() 
     let getterQueue = new Queue()
@@ -75,7 +96,6 @@ export default class Store {
       this.queue.add(prop)
     }
 
- 
     const getterCb = prop => {
       if(!initialized) getterQueue.add(prop)
     }
@@ -149,8 +169,9 @@ export default class Store {
 
     });
 
+    // letting computed properties just be reactive getters
     helpers.objectForEach(computed, (func:anycb, name:prop)=>{
-      delete this._state[name];
+      // delete this._state[name];
       this._computed[name].observe();
     })
 
@@ -176,9 +197,23 @@ export default class Store {
       this._modules[prop] = new Store(module)
     })
 
+
+    // setting watchers to run whenever their property updates
+
+    helpers.objectForEach(watchers, (watcher, prop)=>{
+      this.queue.addListener(prop, ()=>{
+        watcher(this.methodArgs)
+      })
+    })
+
+
     initialized = true;
 
+
   }
+
+
+  
 
   getState(){
     return this._state;

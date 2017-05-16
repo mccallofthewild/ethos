@@ -67,7 +67,6 @@ class Computed {
   update() : void {
 
     this.destination[this.name] = this.value
-    this.setterQueue.add(this.name);
 
   }
 
@@ -101,8 +100,6 @@ class Computed {
 
   observe(){
 
-    this.update();
-
     // adds an event listener for each prop in `this.dependencies`
     this.dependencies.forEach(
       (item)=>{
@@ -110,7 +107,7 @@ class Computed {
         this.setterQueue.addListener(
           item,
           ()=>{
-            this.update()
+            this.setterQueue.add(this.name);
           }
         )
 
