@@ -1,7 +1,7 @@
 {
   "name": "ethos",
   "version": "0.0.1",
-  "description": "React state management, for humans.",
+  "description": "Intuitive state management for React",
   "main": "dist/index.js",
   "unpkg": "dist/index.js",
   "module": "dist/index.js",

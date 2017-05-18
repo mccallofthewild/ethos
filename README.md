@@ -1,6 +1,7 @@
 # # Ethos
+
 Intuitive state management for React.
- 
+
 ----------
 ### Why Ethos?
 
