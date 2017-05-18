@@ -2,6 +2,7 @@
 import * as helpers from './helpers'
 import exceptions from './exceptions'
 // import HivexProxy from '../observe/proxy'
+import * as events from '../events'
 import {
   hivexObserve
 } from '../observe'
@@ -15,84 +16,90 @@ import {
 
 
 type storeParams = {
-  state?:ObjectType<any>,
-  getters?:ObjectType<anycb>,
-  setters?:ObjectType<anycb>,
-  actions?:ObjectType<anycb>, 
-  modules?:ObjectType<storeParams>,
-  computed?:ObjectType<anycb>,
+  truth?:ObjectType<any>,
+  // getters?:ObjectType<anycb>,
+  writers?:ObjectType<anycb>,
+  runners?:ObjectType<anycb>, 
+  children?:ObjectType<storeParams>,
+  thoughts?:ObjectType<anycb>,
   watchers?:ObjectType<anycb>,
-  start?:anycb;
+  founder?:anycb,
 }
 
-export default class Store {
+type parent = Source | null;
+
+
+
+
+
+export default class Source {
 
   _state:Object;
-  _getters:ObjectType<anycb>;
-  _setters:ObjectType<anycb>;
-  _actions:ObjectType<anycb>;
-  _modules:ObjectType<Store>;
+  // _getters:ObjectType<anycb>;
+  _writers:ObjectType<anycb>;
+  _runners:ObjectType<anycb>;
+  _modules:ObjectType<Source>;
   _computed:ObjectType<Computed>;
 
-  getters:Object;
-  actions:Object;
-  setters:Object;
-
-  start:anycb;
+  runners:Object;
+  writers:Object;
 
   methodArgs:Object;
 
-  listeners:Map<prop, Component>;
+  listeners:Map<prop, Listener>;
 
   queue:Queue;
 
+  parent:parent;
+ 
+  origin:Source;
+
   constructor({
-    state={},
-    getters={},
-    setters={},
-    actions={},
-    modules={},
-    computed={},
+    truth={},
+    // getters={}, 
+    writers={},
+    runners={},
+    children={},
+    thoughts={},
     watchers={},
-    start,
-  } : storeParams) {
+    founder=()=>{},
+  } : storeParams,
+  ancestry ?: {
+    parent:parent,
+    origin:Source,
+  }) {
+
+    const {
+      parent=this, origin=this,
+    } = ancestry || {};
+
+    this.parent = parent;
+    this.origin = origin;
 
     let initialized = false;
     /*
-      makes actions, getters and setters easily accessable on the `#actions`
-      and `#setters` properties.
+      makes runners, getters and writers easily accessable on the `#runners`
+      and `#writers` properties.
     */
     
-    this.actions = {}
-    for(let prop in actions) this.actions[prop] = (payload)=>this.send(prop, payload)
+    this.runners = {}
+    for(let prop in runners) this.runners[prop] = (...args)=>this.run(prop, args, true)
     
-    this.setters = {}
-    for(let prop in setters) this.setters[prop] = (payload)=>this.change(prop, payload)
+    this.writers = {}
+    for(let prop in writers) this.writers[prop] = (...args)=>this.write(prop, args, true)
     
-    this.getters = {}
-    for(let prop in getters) this.getters[prop] = (payload)=>this.access(prop, payload)
+    // this.getters = {}
+    // for(let prop in getters) this.getters[prop] = (payload)=>this.access(prop, payload)
     
 
-    this.methodArgs = {
-      /*
-        Allows you to use object destructuring on methods
-        without losing scope of `this`
-      */
-      access: this.access.bind(this),
-      change: this.change.bind(this),
-      send: this.send.bind(this),
-      getters: this.getters,
-      setters: this.setters,
-      actions: this.actions,
-    }
 
     this.listeners = new Map();
 
-    this.queue = new Queue() 
+    this.queue = new Queue()
     let getterQueue = new Queue()
 
 
-    const setterCb = prop =>{
+    const writerCb = prop =>{
       this.queue.add(prop)
     }
 
@@ -100,16 +107,16 @@ export default class Store {
       if(!initialized) getterQueue.add(prop)
     }
 
-    this._state = state;
-    this._getters = getters
-    this._setters = setters
-    this._actions = actions
+    this._state = truth;
+    // this._getters = getters;
+    this._writers = writers;
+    this._runners = runners;
 
     this._modules = {}
     this._computed = {}
     
     
-    hivexObserve(this._state, getterCb, setterCb)
+    hivexObserve(this._state, getterCb, writerCb)
 
     /*
       Initially, we will define computed properties
@@ -142,11 +149,11 @@ export default class Store {
 
     const computedGetters = {}
 
-    helpers.objectForEach(computed, (func:anycb, name:prop)=>{
-      let myHivex = this;
+    helpers.objectForEach(thoughts, (func:anycb, name:prop)=>{
+      let alias = this;
       computedGetters[name] = {
         get(){
-          let val = func(myHivex._state)
+          let val = func.apply(alias.methodArgs)
           getterCb(name);
           return val;
         },
@@ -156,11 +163,31 @@ export default class Store {
 
     Object.defineProperties(this._state, computedGetters);
 
+    this.methodArgs = {
+        /*
+          Allows you to use object destructuring on methods
+          without losing scope of `this`
+        */
+        // access: this.access.bind(this),
+        write: this.write.bind(this),
+        run: this.run.bind(this),
+        // getters: this.getters,
+        writers: this.writers,
+        runners: this.runners,
 
-    helpers.objectForEach(computed, (func:anycb, name:prop)=>{
+        truth:this._state,
 
+        parent:this.parent,
+        origin:this.origin,
+        child:this.child.bind(this),
+
+        
+    }
+
+    helpers.objectForEach(thoughts, (func:anycb, name:prop)=>{
+      const alias = this;
       this._computed[name] = new Computed({
-          getter:func,
+          getter:()=>func.bind(alias.methodArgs),
           name,
           getterQueue:getterQueue,
           setterQueue:this.queue,
@@ -170,18 +197,20 @@ export default class Store {
     });
 
     // letting computed properties just be reactive getters
-    helpers.objectForEach(computed, (func:anycb, name:prop)=>{
+    helpers.objectForEach(thoughts, (func:anycb, name:prop)=>{
       // delete this._state[name];
       this._computed[name].observe();
     })
 
     /*
-      `start` is a function that runs when the Store
+      `founder` is a function that runs when the Source
       is first constructed. It is passed the Hivex
       methods
     */
+    
+    const founder_accessor = this.methodArgs;
 
-    if(start && typeof start == 'function') start(this.methodArgs)
+    if(founder && typeof founder == 'function') founder.apply(founder_accessor)
 
 
     /*
@@ -193,8 +222,11 @@ export default class Store {
 
     */
 
-    helpers.objectForEach(modules, (module, prop)=>{
-      this._modules[prop] = new Store(module)
+    helpers.objectForEach(children, (module, prop)=>{
+      this._modules[prop] = new Source(module, {
+        parent:this,
+        origin:this.origin,
+      })
     })
 
 
@@ -202,7 +234,7 @@ export default class Store {
 
     helpers.objectForEach(watchers, (watcher, prop)=>{
       this.queue.addListener(prop, ()=>{
-        watcher(this.methodArgs)
+        watcher.apply(this.methodArgs)
       })
     })
 
@@ -219,44 +251,85 @@ export default class Store {
     return this._state;
   }
 
+  get truth() : Object {
+    return this._state;
+  } 
 
-  change(setter : prop, payload : any) : any {
-      let func = this._setters[setter]
+
+  write(writer : prop, payload : any, spread?:boolean = false) : any {
+      let func = this._writers[writer]
+      let accessor = this.methodArgs;
       if(!func){
-        throw new Error(`Setter with name "${setter}" does not exist.`)
+        throw new Error(`Writer with name "${writer}" does not exist.`)
       }
-      let res = func(this._state, payload, this.methodArgs)
+      let args = spread? payload : [payload]
+
+      let res = func.apply(accessor, args)
 
       this.updateListeners()
       return res;
   }
 
-  access(getter:prop) : any {
-      let func = this._getters[getter]
-      if(!func){
-        throw new Error(`Getter with name "${getter}" does not exist.`)
-      }
-      let res = func(this._state)
-      return res;
-  }
 
-  send(action:prop, payload:any) : any {
+  run(runner:prop, payload:any, spread?:boolean = false) : any {
       let myHivex = this;
-      let methods = {
-        ...this.methodArgs,
-        done() {
+
+      let usingPromise = false;
+      let promise;
+      let resolver, rejecter;
+
+      let generatePromise = () => {
+
+        promise = new Promise((resolve, reject) => {
+          resolver = resolve;
+          rejecter = reject;
+        })
+        usingPromise = true;
+
+      }
+
+      let accessor = {
+
+
+        done(){
           myHivex.updateListeners()
-        }
+        },
+
+        truth:this._state,
+
+        async(){
+          generatePromise()
+        },
+
+        resolve(...args){
+          return resolver(...args);
+        },
+
+        reject(...args) {
+          return rejecter(...args);
+        },
+        ...this.methodArgs,
+
+
       }
-      let func = this._actions[action]
+
+      let func = this._runners[runner]
+
       if(!func){
-        throw new Error(`Action with name "${action}" does not exist.`)
+        throw new Error(`Action with name "${runner}" does not exist.`)
       }
-      let res = func(this._state, methods, payload)
+
+      let args = spread? payload : [payload]
+
+      let res = func.apply(accessor, args)
+
+      console.log(usingPromise)
+      if(usingPromise) res = promise;
+
       return res;
   }
 
-  module(moduleQuery: string ) : Store {
+  child(moduleQuery: string ) : Source {
     /*
       to give users access to a module,
       good for when someone chooses to 
@@ -265,8 +338,32 @@ export default class Store {
     return helpers.moduleFromQuery(moduleQuery, this);
   }
  
-  listen(component:reactComponent, stateQuery) : void {
-    reactListen(component, this, stateQuery);
+  listen(component:reactComponent, stateQuery:ObjectType<prop>) : void {
+
+    let dependencies = [];
+
+    for(let prop in stateQuery) dependencies.push(stateQuery[prop])
+
+    let listener = reactListen(component, this, dependencies);
+
+    let middleware = this.queue.use( (...args)=>listener.check(...args) );
+
+    this.listeners.set(listener.__id, listener);
+
+    listener.on(events.listener.MOUNT, ()=>{
+
+      middleware = this.queue.use( (...args)=>listener.check(...args) );
+      this.listeners.set(listener.__id, listener)
+
+    })
+
+    listener.on(events.listener.UNMOUNT, ()=>{
+
+      this.queue.retire(middleware)
+      this.listeners.delete(listener.__id)
+
+    })
+
   }
 
 
@@ -284,7 +381,7 @@ export default class Store {
     this.queue.clear()
   }
 
-  openSetters(...args:any) : void {
+  openWriters(...args:any) : void {
     let myHivex = this;
     let [moduleQuery, query, component] = helpers.parseOpenArgs(args)
     
@@ -292,23 +389,23 @@ export default class Store {
 
     /*
       If `module` is not the module we are currently in,
-      open its setters instead.
+      open its writers instead.
     */
 
-    if( module !== this ) return module.openSetters(query, component)
+    if( module !== this ) return module.openWriters(query, component)
 
     // `formattedKeys` are the user-defined keys which alias properties on a hivex object 
     let formattedKeys = helpers.formatObjectQuery(query)
     
-    let setters = {}
+    let writers = {}
     for(let alias in formattedKeys){
       let name = formattedKeys[alias]
-      setters[alias] = function(payload){
-        return myHivex.change(name, payload)
+      writers[alias] = function(payload){
+        return myHivex.write(name, payload)
       }
     }
 
-    Object.assign(component, setters)
+    Object.assign(component, writers)
   }
 
   openActions(...args:any) : void {
@@ -319,25 +416,25 @@ export default class Store {
 
     /*
       If `module` is not the module we are currently in,
-      open its actions instead.
+      open its runners instead.
     */
     if( module !== this ) return module.openActions(query, component)
 
     // `formattedKeys` are the user-defined keys which alias properties on a hivex object 
     let formattedKeys = helpers.formatObjectQuery(query)
     
-    let actions = {}
+    let runners = {}
     for(let alias in formattedKeys){
       let name = formattedKeys[alias]
-      actions[alias] = function(payload){
-        return module.send(name, payload)
+      runners[alias] = function(payload){
+        return module.run(name, payload)
       }
     }
 
-    Object.assign(component, actions)
+    Object.assign(component, runners)
   }
 
-  openState(...args:any) : Object {
+  getTruth(...args:any) : Object {
 
     let [moduleQuery, query, component] = helpers.parseOpenArgs(args)
 
@@ -348,16 +445,18 @@ export default class Store {
       open its state instead. The module's state will not
       be reactive otherwise.
     */
-    if( module !== this ) return module.openState(query, component)
+    if( module !== this ) return module.getTruth(query, component)
 
     // `formattedKeys` are the user-defined keys which alias properties on a hivex object 
     let formattedKeys = helpers.formatObjectQuery(query)
 
     let hivexData = component.__hivex;
-
+    
     let stateQuery;
 
     if(hivexData && hivexData.stateQuery){
+      /* truth queries only exist on a per-listener basis, so if the properties overlap,
+      it's not our problem. */
       stateQuery = Object.assign(component.__hivex.stateQuery, formattedKeys)
     }
     else stateQuery = formattedKeys;

@@ -2,19 +2,19 @@
 
 
 // a hack to get VScode flow to work
-import _Store from '../src/store';
+import _Source from '../src/store';
 import _Queue from '../src/store/queue';
-import _Component from '../src/render/component';
+import _Listener from '../src/render/listener';
 
-declare type Store = _Store;
+declare type Source = _Source;
 
 declare type Queue = _Queue;
 
-declare type Component = _Component;
+declare type Listener = _Listener;
 // end hack
 
 
-declare type what = [Store, Queue, Component];
+declare type what = [Source, Queue, Listener];
 
 declare type observeArgs = [ Object, prop, anycb, anycb ]
 
@@ -35,21 +35,14 @@ declare type hivexFormattedQuery = {
 declare type openQuery = Array<prop> | ObjectType<prop>;
 
 declare type openArgs = [
-  string|openQuery, openQuery|Component, Component
+  string|openQuery, openQuery|Listener, Listener
 ];
 
 declare type formattedOpenArgs = [
-  string, openQuery, Component
+  string, openQuery, Listener
 ];
 
-declare type hivexComponentData = {
-    __id:string,
-    stateQuery:hivexFormattedQuery,
-    mounted:boolean,
-    updating:boolean,
-    rendered:boolean,
-}
-
+declare type hivexComponentData = Listener;
 declare type hivexReactComponent = {
   __hivex:hivexComponentData,
 

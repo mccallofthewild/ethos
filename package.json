@@ -1,12 +1,12 @@
 {
-  "name": "hivex",
-  "version": "1.0.1",
+  "name": "ethos",
+  "version": "0.0.1",
   "description": "React state management, for humans.",
   "main": "dist/index.js",
   "unpkg": "dist/index.js",
   "module": "dist/index.js",
   "repository": {
-    "url": "https://github.com/mccallofthewild/hivex.git",
+    "url": "https://github.com/mccallofthewild/ethos.git",
     "type": "git"
   },
   "scripts": {

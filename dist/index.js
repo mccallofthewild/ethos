@@ -73,7 +73,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 9);
+/******/ 	return __webpack_require__(__webpack_require__.s = 11);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -353,9 +353,13 @@ var _helpers = __webpack_require__(5);
 
 var helpers = _interopRequireWildcard(_helpers);
 
-var _exceptions = __webpack_require__(8);
+var _exceptions = __webpack_require__(9);
 
 var _exceptions2 = _interopRequireDefault(_exceptions);
+
+var _events = __webpack_require__(10);
+
+var events = _interopRequireWildcard(_events);
 
 var _observe = __webpack_require__(2);
 
@@ -371,11 +375,11 @@ var _setdictionary = __webpack_require__(6);
 
 var _setdictionary2 = _interopRequireDefault(_setdictionary);
 
-var _console = __webpack_require__(7);
+var _console = __webpack_require__(8);
 
 var _console2 = _interopRequireDefault(_console);
 
-var _react = __webpack_require__(13);
+var _react = __webpack_require__(15);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -383,83 +387,80 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var Store = function () {
-  function Store(_ref) {
+var Source = function () {
+  function Source(_ref, ancestry) {
     var _this = this;
 
-    var _ref$state = _ref.state,
-        state = _ref$state === undefined ? {} : _ref$state,
-        _ref$getters = _ref.getters,
-        getters = _ref$getters === undefined ? {} : _ref$getters,
-        _ref$setters = _ref.setters,
-        setters = _ref$setters === undefined ? {} : _ref$setters,
-        _ref$actions = _ref.actions,
-        actions = _ref$actions === undefined ? {} : _ref$actions,
-        _ref$modules = _ref.modules,
-        modules = _ref$modules === undefined ? {} : _ref$modules,
-        _ref$computed = _ref.computed,
-        computed = _ref$computed === undefined ? {} : _ref$computed,
+    var _ref$truth = _ref.truth,
+        truth = _ref$truth === undefined ? {} : _ref$truth,
+        _ref$writers = _ref.writers,
+        writers = _ref$writers === undefined ? {} : _ref$writers,
+        _ref$runners = _ref.runners,
+        runners = _ref$runners === undefined ? {} : _ref$runners,
+        _ref$children = _ref.children,
+        children = _ref$children === undefined ? {} : _ref$children,
+        _ref$thoughts = _ref.thoughts,
+        thoughts = _ref$thoughts === undefined ? {} : _ref$thoughts,
         _ref$watchers = _ref.watchers,
         watchers = _ref$watchers === undefined ? {} : _ref$watchers,
-        start = _ref.start;
+        _ref$founder = _ref.founder,
+        founder = _ref$founder === undefined ? function () {} : _ref$founder;
 
-    _classCallCheck(this, Store);
+    _classCallCheck(this, Source);
+
+    var _ref2 = ancestry || {},
+        _ref2$parent = _ref2.parent,
+        parent = _ref2$parent === undefined ? this : _ref2$parent,
+        _ref2$origin = _ref2.origin,
+        origin = _ref2$origin === undefined ? this : _ref2$origin;
+
+    this.parent = parent;
+    this.origin = origin;
 
     var initialized = false;
     /*
-      makes actions, getters and setters easily accessable on the `#actions`
-      and `#setters` properties.
+      makes runners, getters and writers easily accessable on the `#runners`
+      and `#writers` properties.
     */
 
-    this.actions = {};
+    this.runners = {};
 
     var _loop = function _loop(_prop) {
-      _this.actions[_prop] = function (payload) {
-        return _this.send(_prop, payload);
+      _this.runners[_prop] = function () {
+        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
+        return _this.run(_prop, args, true);
       };
     };
 
-    for (var _prop in actions) {
+    for (var _prop in runners) {
       _loop(_prop);
-    }this.setters = {};
+    }this.writers = {};
 
     var _loop2 = function _loop2(_prop2) {
-      _this.setters[_prop2] = function (payload) {
-        return _this.change(_prop2, payload);
+      _this.writers[_prop2] = function () {
+        for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+          args[_key2] = arguments[_key2];
+        }
+
+        return _this.write(_prop2, args, true);
       };
     };
 
-    for (var _prop2 in setters) {
+    for (var _prop2 in writers) {
       _loop2(_prop2);
-    }this.getters = {};
+    } // this.getters = {}
+    // for(let prop in getters) this.getters[prop] = (payload)=>this.access(prop, payload)
 
-    var _loop3 = function _loop3(_prop3) {
-      _this.getters[_prop3] = function (payload) {
-        return _this.access(_prop3, payload);
-      };
-    };
-
-    for (var _prop3 in getters) {
-      _loop3(_prop3);
-    }this.methodArgs = {
-      /*
-        Allows you to use object destructuring on methods
-        without losing scope of `this`
-      */
-      access: this.access.bind(this),
-      change: this.change.bind(this),
-      send: this.send.bind(this),
-      getters: this.getters,
-      setters: this.setters,
-      actions: this.actions
-    };
 
     this.listeners = new Map();
 
     this.queue = new _queue2.default();
     var getterQueue = new _queue2.default();
 
-    var setterCb = function setterCb(prop) {
+    var writerCb = function writerCb(prop) {
       _this.queue.add(prop);
     };
 
@@ -467,15 +468,15 @@ var Store = function () {
       if (!initialized) getterQueue.add(prop);
     };
 
-    this._state = state;
-    this._getters = getters;
-    this._setters = setters;
-    this._actions = actions;
+    this._state = truth;
+    // this._getters = getters;
+    this._writers = writers;
+    this._runners = runners;
 
     this._modules = {};
     this._computed = {};
 
-    (0, _observe.hivexObserve)(this._state, getterCb, setterCb);
+    (0, _observe.hivexObserve)(this._state, getterCb, writerCb);
 
     /*
       Initially, we will define computed properties
@@ -502,11 +503,11 @@ var Store = function () {
 
     var computedGetters = {};
 
-    helpers.objectForEach(computed, function (func, name) {
-      var myHivex = _this;
+    helpers.objectForEach(thoughts, function (func, name) {
+      var alias = _this;
       computedGetters[name] = {
         get: function get() {
-          var val = func(myHivex._state);
+          var val = func.apply(alias.methodArgs);
           getterCb(name);
           return val;
         },
@@ -517,10 +518,32 @@ var Store = function () {
 
     Object.defineProperties(this._state, computedGetters);
 
-    helpers.objectForEach(computed, function (func, name) {
+    this.methodArgs = {
+      /*
+        Allows you to use object destructuring on methods
+        without losing scope of `this`
+      */
+      // access: this.access.bind(this),
+      write: this.write.bind(this),
+      run: this.run.bind(this),
+      // getters: this.getters,
+      writers: this.writers,
+      runners: this.runners,
 
+      truth: this._state,
+
+      parent: this.parent,
+      origin: this.origin,
+      child: this.child.bind(this)
+
+    };
+
+    helpers.objectForEach(thoughts, function (func, name) {
+      var alias = _this;
       _this._computed[name] = new _computed2.default({
-        getter: func,
+        getter: function getter() {
+          return func.bind(alias.methodArgs);
+        },
         name: name,
         getterQueue: getterQueue,
         setterQueue: _this.queue,
@@ -529,18 +552,20 @@ var Store = function () {
     });
 
     // letting computed properties just be reactive getters
-    helpers.objectForEach(computed, function (func, name) {
+    helpers.objectForEach(thoughts, function (func, name) {
       // delete this._state[name];
       _this._computed[name].observe();
     });
 
     /*
-      `start` is a function that runs when the Store
+      `founder` is a function that runs when the Source
       is first constructed. It is passed the Hivex
       methods
     */
 
-    if (start && typeof start == 'function') start(this.methodArgs);
+    var founder_accessor = this.methodArgs;
+
+    if (founder && typeof founder == 'function') founder.apply(founder_accessor);
 
     /*
        modules are registered last to ensure that if
@@ -549,67 +574,106 @@ var Store = function () {
       its parent modules.
      */
 
-    helpers.objectForEach(modules, function (module, prop) {
-      _this._modules[prop] = new Store(module);
+    helpers.objectForEach(children, function (module, prop) {
+      _this._modules[prop] = new Source(module, {
+        parent: _this,
+        origin: _this.origin
+      });
     });
 
     // setting watchers to run whenever their property updates
 
     helpers.objectForEach(watchers, function (watcher, prop) {
       _this.queue.addListener(prop, function () {
-        watcher(_this.methodArgs);
+        watcher.apply(_this.methodArgs);
       });
     });
 
     initialized = true;
   }
+  // _getters:ObjectType<anycb>;
 
-  _createClass(Store, [{
+
+  _createClass(Source, [{
     key: 'getState',
     value: function getState() {
       return this._state;
     }
   }, {
-    key: 'change',
-    value: function change(setter, payload) {
-      var func = this._setters[setter];
+    key: 'write',
+    value: function write(writer, payload) {
+      var spread = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+      var func = this._writers[writer];
+      var accessor = this.methodArgs;
       if (!func) {
-        throw new Error('Setter with name "' + setter + '" does not exist.');
+        throw new Error('Writer with name "' + writer + '" does not exist.');
       }
-      var res = func(this._state, payload, this.methodArgs);
+      var args = spread ? payload : [payload];
+
+      var res = func.apply(accessor, args);
 
       this.updateListeners();
       return res;
     }
   }, {
-    key: 'access',
-    value: function access(getter) {
-      var func = this._getters[getter];
-      if (!func) {
-        throw new Error('Getter with name "' + getter + '" does not exist.');
-      }
-      var res = func(this._state);
-      return res;
-    }
-  }, {
-    key: 'send',
-    value: function send(action, payload) {
+    key: 'run',
+    value: function run(runner, payload) {
+      var spread = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
       var myHivex = this;
-      var methods = _extends({}, this.methodArgs, {
+
+      var usingPromise = false;
+      var promise = void 0;
+      var resolver = void 0,
+          rejecter = void 0;
+
+      var generatePromise = function generatePromise() {
+
+        promise = new Promise(function (resolve, reject) {
+          resolver = resolve;
+          rejecter = reject;
+        });
+        usingPromise = true;
+      };
+
+      var accessor = _extends({
         done: function done() {
           myHivex.updateListeners();
+        },
+
+
+        truth: this._state,
+
+        async: function async() {
+          generatePromise();
+        },
+        resolve: function resolve() {
+          return resolver.apply(undefined, arguments);
+        },
+        reject: function reject() {
+          return rejecter.apply(undefined, arguments);
         }
-      });
-      var func = this._actions[action];
+      }, this.methodArgs);
+
+      var func = this._runners[runner];
+
       if (!func) {
-        throw new Error('Action with name "' + action + '" does not exist.');
+        throw new Error('Action with name "' + runner + '" does not exist.');
       }
-      var res = func(this._state, methods, payload);
+
+      var args = spread ? payload : [payload];
+
+      var res = func.apply(accessor, args);
+
+      console.log(usingPromise);
+      if (usingPromise) res = promise;
+
       return res;
     }
   }, {
-    key: 'module',
-    value: function module(moduleQuery) {
+    key: 'child',
+    value: function child(moduleQuery) {
       /*
         to give users access to a module,
         good for when someone chooses to 
@@ -620,7 +684,33 @@ var Store = function () {
   }, {
     key: 'listen',
     value: function listen(component, stateQuery) {
-      (0, _react.listen)(component, this, stateQuery);
+      var _this2 = this;
+
+      var dependencies = [];
+
+      for (var _prop3 in stateQuery) {
+        dependencies.push(stateQuery[_prop3]);
+      }var listener = (0, _react.listen)(component, this, dependencies);
+
+      var middleware = this.queue.use(function () {
+        return listener.check.apply(listener, arguments);
+      });
+
+      this.listeners.set(listener.__id, listener);
+
+      listener.on(events.listener.MOUNT, function () {
+
+        middleware = _this2.queue.use(function () {
+          return listener.check.apply(listener, arguments);
+        });
+        _this2.listeners.set(listener.__id, listener);
+      });
+
+      listener.on(events.listener.UNMOUNT, function () {
+
+        _this2.queue.retire(middleware);
+        _this2.listeners.delete(listener.__id);
+      });
     }
   }, {
     key: 'updateListeners',
@@ -636,12 +726,12 @@ var Store = function () {
       this.queue.clear();
     }
   }, {
-    key: 'openSetters',
-    value: function openSetters() {
+    key: 'openWriters',
+    value: function openWriters() {
       var myHivex = this;
 
-      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-        args[_key] = arguments[_key];
+      for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+        args[_key3] = arguments[_key3];
       }
 
       var _helpers$parseOpenArg = helpers.parseOpenArgs(args),
@@ -654,36 +744,36 @@ var Store = function () {
 
       /*
         If `module` is not the module we are currently in,
-        open its setters instead.
+        open its writers instead.
       */
 
-      if (module !== this) return module.openSetters(query, component);
+      if (module !== this) return module.openWriters(query, component);
 
       // `formattedKeys` are the user-defined keys which alias properties on a hivex object 
       var formattedKeys = helpers.formatObjectQuery(query);
 
-      var setters = {};
+      var writers = {};
 
-      var _loop4 = function _loop4(alias) {
+      var _loop3 = function _loop3(alias) {
         var name = formattedKeys[alias];
-        setters[alias] = function (payload) {
-          return myHivex.change(name, payload);
+        writers[alias] = function (payload) {
+          return myHivex.write(name, payload);
         };
       };
 
       for (var alias in formattedKeys) {
-        _loop4(alias);
+        _loop3(alias);
       }
 
-      Object.assign(component, setters);
+      Object.assign(component, writers);
     }
   }, {
     key: 'openActions',
     value: function openActions() {
       var myHivex = this;
 
-      for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-        args[_key2] = arguments[_key2];
+      for (var _len4 = arguments.length, args = Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+        args[_key4] = arguments[_key4];
       }
 
       var _helpers$parseOpenArg3 = helpers.parseOpenArgs(args),
@@ -696,35 +786,35 @@ var Store = function () {
 
       /*
         If `module` is not the module we are currently in,
-        open its actions instead.
+        open its runners instead.
       */
       if (module !== this) return module.openActions(query, component);
 
       // `formattedKeys` are the user-defined keys which alias properties on a hivex object 
       var formattedKeys = helpers.formatObjectQuery(query);
 
-      var actions = {};
+      var runners = {};
 
-      var _loop5 = function _loop5(alias) {
+      var _loop4 = function _loop4(alias) {
         var name = formattedKeys[alias];
-        actions[alias] = function (payload) {
-          return module.send(name, payload);
+        runners[alias] = function (payload) {
+          return module.run(name, payload);
         };
       };
 
       for (var alias in formattedKeys) {
-        _loop5(alias);
+        _loop4(alias);
       }
 
-      Object.assign(component, actions);
+      Object.assign(component, runners);
     }
   }, {
-    key: 'openState',
-    value: function openState() {
-      var _this2 = this;
+    key: 'getTruth',
+    value: function getTruth() {
+      var _this3 = this;
 
-      for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-        args[_key3] = arguments[_key3];
+      for (var _len5 = arguments.length, args = Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
+        args[_key5] = arguments[_key5];
       }
 
       var _helpers$parseOpenArg5 = helpers.parseOpenArgs(args),
@@ -740,7 +830,7 @@ var Store = function () {
         open its state instead. The module's state will not
         be reactive otherwise.
       */
-      if (module !== this) return module.openState(query, component);
+      if (module !== this) return module.getTruth(query, component);
 
       // `formattedKeys` are the user-defined keys which alias properties on a hivex object 
       var formattedKeys = helpers.formatObjectQuery(query);
@@ -750,6 +840,8 @@ var Store = function () {
       var stateQuery = void 0;
 
       if (hivexData && hivexData.stateQuery) {
+        /* truth queries only exist on a per-listener basis, so if the properties overlap,
+        it's not our problem. */
         stateQuery = Object.assign(component.__hivex.stateQuery, formattedKeys);
       } else stateQuery = formattedKeys;
 
@@ -758,15 +850,20 @@ var Store = function () {
       var staticState = helpers.formatObjectPieceForComponent(module._state, formattedKeys);
 
       return helpers.getterProxy(staticState, function (obj, prop) {
-        return _this2._state[prop];
+        return _this3._state[prop];
       });
+    }
+  }, {
+    key: 'truth',
+    get: function get() {
+      return this._state;
     }
   }]);
 
-  return Store;
+  return Source;
 }();
 
-exports.default = Store;
+exports.default = Source;
 
 /***/ }),
 /* 2 */
@@ -786,7 +883,7 @@ exports.observeProperties = observeProperties;
 
 var _utils = __webpack_require__(3);
 
-var _specials = __webpack_require__(12);
+var _specials = __webpack_require__(14);
 
 var _specials2 = _interopRequireDefault(_specials);
 
@@ -1095,7 +1192,7 @@ exports.clearDescriptor = clearDescriptor;
 exports.clearDescriptors = clearDescriptors;
 exports.getterProxy = getterProxy;
 
-var _exceptions = __webpack_require__(8);
+var _exceptions = __webpack_require__(9);
 
 var _exceptions2 = _interopRequireDefault(_exceptions);
 
@@ -1430,6 +1527,19 @@ exports.default = SetDictionary;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+var UNMOUNT = exports.UNMOUNT = 'UNMOUNT';
+var MOUNT = exports.MOUNT = 'MOUNT';
+
+/***/ }),
+/* 8 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
@@ -1464,7 +1574,7 @@ var HivexConsole = {
 exports.default = HivexConsole;
 
 /***/ }),
-/* 8 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1487,7 +1597,27 @@ exports.default = {
 };
 
 /***/ }),
-/* 9 */
+/* 10 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.listener = undefined;
+
+var _listener = __webpack_require__(7);
+
+var listener = _interopRequireWildcard(_listener);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+exports.listener = listener;
+
+/***/ }),
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1500,11 +1630,11 @@ var _store2 = _interopRequireDefault(_store);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 module.exports = {
-  Store: _store2.default
+  Source: _store2.default
 };
 
 /***/ }),
-/* 10 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1575,7 +1705,7 @@ function overwrite() {
 }
 
 /***/ }),
-/* 11 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1647,7 +1777,7 @@ exports.default = function () {
 };
 
 /***/ }),
-/* 12 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1657,11 +1787,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _Map = __webpack_require__(11);
+var _Map = __webpack_require__(13);
 
 var _Map2 = _interopRequireDefault(_Map);
 
-var _Array = __webpack_require__(10);
+var _Array = __webpack_require__(12);
 
 var _Array2 = _interopRequireDefault(_Array);
 
@@ -1674,7 +1804,7 @@ var specials = {
 exports.default = specials;
 
 /***/ }),
-/* 13 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1685,25 +1815,24 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.listen = listen;
 
-var _console = __webpack_require__(7);
+var _console = __webpack_require__(8);
 
 var _console2 = _interopRequireDefault(_console);
 
-var _component = __webpack_require__(14);
+var _listener = __webpack_require__(16);
 
-var _component2 = _interopRequireDefault(_component);
+var _listener2 = _interopRequireDefault(_listener);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function listen(component, context, stateQuery) {
+function listen(component, context, dependencies) {
   // context is `this` in the Hivex Store
   var myHivex = context;
 
-  var hivexComponent = new _component2.default({
+  var hivexComponent = new _listener2.default({
     name: component.constructor.name,
-    stateQuery: stateQuery,
+    dependencies: dependencies,
     destination: component.state,
-    reactComponent: component,
     render: function render() {
       component.forceUpdate();
     }
@@ -1718,15 +1847,13 @@ function listen(component, context, stateQuery) {
       forceUpdateFunc = component.forceUpdate;
 
 
-  component.componentWillMount = function () {
+  component.componentDidMount = function () {
     for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
       args[_key] = arguments[_key];
     }
 
-    component.__hivex.rendered = true;
-    component.__hivex.mounted = true;
-    myHivex.listeners.set(component.__hivex.__id, hivexComponent);
-    myHivex.updateListeners();
+    hivexComponent.rendered = true;
+    hivexComponent.mounted = true;
     try {
       if (mountFunc) mountFunc.apply(component, args);
     } catch (error) {
@@ -1751,9 +1878,8 @@ function listen(component, context, stateQuery) {
     } catch (error) {
       _console2.default.error(error);
     }
-    component.__hivex.rendered = false;
-    component.__hivex.mounted = false;
-    myHivex.listeners.delete(component.__hivex.__id);
+    hivexComponent.rendered = false;
+    hivexComponent.mounted = false;
   };
 
   component.componentWillUpdate = function () {
@@ -1766,7 +1892,7 @@ function listen(component, context, stateQuery) {
     } catch (error) {
       _console2.default.error(error);
     }
-    component.__hivex.updating = true;
+    hivexComponent.updating = true;
   };
 
   component.componentDidUpdate = function () {
@@ -1779,7 +1905,7 @@ function listen(component, context, stateQuery) {
     } catch (error) {
       _console2.default.error(error);
     }
-    component.__hivex.updating = false;
+    hivexComponent.updating = false;
   };
 
   component.forceUpdate = function () {
@@ -1787,13 +1913,15 @@ function listen(component, context, stateQuery) {
       args[_key5] = arguments[_key5];
     }
 
-    component.__hivex.updating = true;
+    hivexComponent.updating = true;
     forceUpdateFunc.apply(component, args);
   };
+
+  return hivexComponent;
 }
 
 /***/ }),
-/* 14 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1817,6 +1945,10 @@ var _store = __webpack_require__(1);
 
 var _store2 = _interopRequireDefault(_store);
 
+var _listener = __webpack_require__(7);
+
+var listener_events = _interopRequireWildcard(_listener);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
@@ -1832,39 +1964,66 @@ function hivexId(name) {
 
 // willMount, didMount, willUpdate, didUpdate, render
 
-var Component = function () {
-  function Component(_ref, store) {
+var Listener = function () {
+  function Listener(_ref, store) {
     var _ref$name = _ref.name,
         name = _ref$name === undefined ? "AnonymousComponent" : _ref$name,
-        _ref$stateQuery = _ref.stateQuery,
-        stateQuery = _ref$stateQuery === undefined ? {} : _ref$stateQuery,
         _ref$rendered = _ref.rendered,
         rendered = _ref$rendered === undefined ? true : _ref$rendered,
         _ref$mounted = _ref.mounted,
         mounted = _ref$mounted === undefined ? true : _ref$mounted,
         _ref$updating = _ref.updating,
         updating = _ref$updating === undefined ? false : _ref$updating,
+        dependencies = _ref.dependencies,
         render = _ref.render;
 
-    _classCallCheck(this, Component);
+    _classCallCheck(this, Listener);
 
     this.__id = hivexId(name);
     this.mounted = mounted;
     this.rendered = rendered;
     this.updating = updating;
 
-    this.stateQuery = stateQuery;
-
+    this.dependencies = new Set(dependencies);
     this.store = store;
+
+    this.events = new _queue2.default();
 
     if (typeof render !== 'function') {
       throw new Error('render function not defined for hivex component');
     }
 
+    this.dirty = true;
+
     this.render = render;
   }
 
-  _createClass(Component, [{
+  _createClass(Listener, [{
+    key: 'emit',
+    value: function emit(event) {
+      this.events.add(event);
+    }
+  }, {
+    key: 'on',
+    value: function on(event, cb) {
+      switch (event) {
+        case listener_events[event]:
+          this.events.addListener(event, cb);
+          break;
+        default:
+          throw new Error('Event ' + event + ' does not exist!');
+      }
+    }
+  }, {
+    key: 'check',
+    value: function check(prop) {
+      switch (true) {
+        case this.dependencies.has(prop):
+          this.dirty = true;
+          break;
+      }
+    }
+  }, {
     key: 'defineLifecycleMethod',
     value: function defineLifecycleMethod(methodName, fn, context) {
       // defining in object container to retain function name
@@ -1873,29 +2032,29 @@ var Component = function () {
   }, {
     key: 'mount',
     value: function mount() {
-      this.store.listeners.set(this.__id, this);
       this.mounted = true;
       this.rendered = true;
       this.update();
+      this.emit(listener_events.MOUNT);
     }
   }, {
     key: 'unmount',
     value: function unmount() {
       this.mounted = false;
       this.rendered = false;
-      this.store.listeners.delete(this.__id, this);
+      this.emit(listener_events.UNMOUNT);
     }
   }, {
     key: 'update',
     value: function update() {
-      if (!this.updating && this.rendered) this.render();
+      if (!this.updating && this.rendered && this.mounted && this.dirty) this.render();
     }
   }]);
 
-  return Component;
+  return Listener;
 }();
 
-exports.default = Component;
+exports.default = Listener;
 
 /***/ })
 /******/ ]);

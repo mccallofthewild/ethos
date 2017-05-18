@@ -1,18 +1,17 @@
 // @flow
 import HivexConsole from '../misc/console'
 import type Store from '../store'
-import Component from '../render/component'
+import Listener from '../render/listener'
 
-export function listen(component:hivexReactComponent, context:Store, stateQuery:Object) : void {
+export function listen(component:hivexReactComponent, context:Store, dependencies:Array<prop>) : Listener {
     // context is `this` in the Hivex Store
     let myHivex = context;
 
-    const hivexComponent = new Component({
+    const hivexComponent = new Listener({
       name:component.constructor.name,
-      stateQuery,
+      dependencies,
       destination:component.state,
-      reactComponent:component,
-      render(){
+      render(){ 
         component.forceUpdate()
       }
     }, context)
@@ -27,12 +26,10 @@ export function listen(component:hivexReactComponent, context:Store, stateQuery:
       forceUpdate: forceUpdateFunc
     } = component
 
-    component.componentWillMount = (...args) => {
+    component.componentDidMount = (...args) => {
 
-      component.__hivex.rendered = true;
-      component.__hivex.mounted = true;
-      myHivex.listeners.set(component.__hivex.__id, hivexComponent)
-      myHivex.updateListeners()
+      hivexComponent.rendered = true;
+      hivexComponent.mounted = true;
       try {
         if (mountFunc) mountFunc.apply(component, args)
       } catch (error) {
@@ -56,9 +53,8 @@ export function listen(component:hivexReactComponent, context:Store, stateQuery:
       } catch (error) {
         HivexConsole.error(error)
       }
-      component.__hivex.rendered = false
-      component.__hivex.mounted = false;
-      myHivex.listeners.delete(component.__hivex.__id)
+      hivexComponent.rendered = false
+      hivexComponent.mounted = false;
 
     }
 
@@ -69,7 +65,7 @@ export function listen(component:hivexReactComponent, context:Store, stateQuery:
       catch(error){
         HivexConsole.error(error)
       }
-      component.__hivex.updating = true;
+      hivexComponent.updating = true;
     }
 
     component.componentDidUpdate = (...args) => {
@@ -79,15 +75,16 @@ export function listen(component:hivexReactComponent, context:Store, stateQuery:
       catch(error){
         HivexConsole.error(error)
       }
-      component.__hivex.updating = false;
+      hivexComponent.updating = false;
     }
 
     component.forceUpdate = (...args) => {
-      component.__hivex.updating = true;
+      hivexComponent.updating = true;
       forceUpdateFunc.apply(component, args)
     }
 
-    
+
+    return hivexComponent;
 
   
 }

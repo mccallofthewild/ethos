@@ -1,5 +1,5 @@
-import Store from './store'
+import Source from './store'
 
 module.exports =  {
-  Store:Store,
+  Source:Source,
 }
