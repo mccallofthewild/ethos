@@ -469,7 +469,7 @@ but if we changed `truth.a`…
 - `this.run` is your `Source`’s `run` method.
 
 ## Founder Function
-> In an Ethos Source, the `founder` function is a function that is instantly invoked once the store is built. It can be used to initialize a lot of store functionality an avoid contaminating your view layer with store logic.
+> In an Ethos Source, the `founder` function is a function that is instantly invoked once the source is built. It can be used to initialize a lot of source functionality an avoid contaminating your view layer with data logic.
 
 Example:
 ```javascript 
