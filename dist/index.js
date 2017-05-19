@@ -666,7 +666,6 @@ var Source = function () {
 
       var res = func.apply(accessor, args);
 
-      console.log(usingPromise);
       if (usingPromise) res = promise;
 
       return res;

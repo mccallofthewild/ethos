@@ -323,7 +323,6 @@ export default class Source {
 
       let res = func.apply(accessor, args)
 
-      console.log(usingPromise)
       if(usingPromise) res = promise;
 
       return res;
