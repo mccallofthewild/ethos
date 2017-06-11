@@ -1,8 +1,7 @@
-# # Ethos
-
-Intuitive state management for React.
-
-----------
+# Ethos
+Intuitive state management.
+ 
+- - - -
 ### Why Ethos?
 
 * **Intuitive**
@@ -11,7 +10,7 @@ Intuitive state management for React.
 	* Not only can Ethos dramatically speed up your development process, it also beats Flux on benchmarks such as script evaluation, compile time and  lifecycle iteration.
 * **Powerful**
 	* Ethos gives your data leverage with responsive features such as computed properties (`thoughts`) and watcher functions.
-----------
+- - - -
 
 ### Getting Started
 This tutorial will walk you through using Ethos with React.
@@ -37,92 +36,93 @@ Truth is the most important property in the Ethos `Source`. It holds all the dat
 Defining truth in Ethos is simple:
 ``` javascript
 	// ./source.js
-	
-	import Ethos, { Source } from 'ethos'
 
-  let count = 0;
-  function id(){
-    count++
-    return count;
-  }
-	const source = {
-		truth:{
-			todos:[
-				{
-				  	text:"take out the trash",
-          		id:id(), //1
-					complete:false,
-				},
-				{
-          		text:"clean room",
-          		id:id(), //2
-					complete:false,
-        		},
-				{
-          		text:"feed dog",
-          		id:id(), //3
-					complete:false,
-        		}
-			],
-			time:Date.now()
-		}
+import { Source } from 'ethos'
+
+let count = 0;
+function id(){
+	count++
+	return count;
+}
+const source = {
+	truth:{
+		todos:[
+			{
+				text:"take out the trash",
+				id:id(), //1
+				complete:false,
+			},
+			{
+				text:"clean room",
+				id:id(), //2
+				complete:false,
+			},
+			{
+				text:"feed dog",
+				id:id(), //3
+				complete:false,
+			}
+		],
+		time:Date.now()
 	}
+}
 
-	export default new Source(source);
+export default new Source(source);
 ```
 ### Accessing Truth
 
 #### source.getTruth()
-> Truth is accessed outside the source by using a `Source` prototype method called `getTruth`
+> Truth is accessed outside the source by using a `Source` prototype method called `getTruth`  
 
 - `getTruth`  takes in two arguments:
 	1. The first argument is a query for which `truth` properties you want. This can be an array or an object:
 		-  With an *Array*, as in the example below, each string item represents both the name of your source's `truth` prop and the property it will be returned as. 
 			- e.g. `let localTruth = getTruth(['todos'], this)` can be used as `localtruth.todos` .
-	- With an  *Object*, you can alias a source's truth properties with whatever you want by using a key of your custom name with a value of the actual property name.
+		- With an  *Object*, you can alias a source's truth properties with whatever you want by using a key of your custom name with a value of the actual property name.
 			- e.g. If you wanted `'todos'` to be aliased as `'myTodos'`, you could use  `let localTruth = getTruth({ myTodos: 'todos' })`  then reference it as `localTruth.myTodos` .
 2. The second argument is the component itself, `this`.  It essentially tells Ethos to watch the component and update it when something changes.
 
 Full Example:
 
 ``` javascript 
-	// ./my-component.js
-	import React from 'react';
-	import source from './source.js';
+// ./my-component.js
+import React from 'react';
+import source from './source.js';
 
-	export default class TodoList extends React.Component {
-		constructor(props){
-		   super(props);
-		   this.truth = source.getTruth(['todos'], this);
-		}
-		
-		render(){
-			return (
-
-          <ul id="todo-list">
-            {this.truth.todos.map((todo, index)=> (
-              <li
-                key={todo.id}
-              >
-				{todo.text}
-				</li>
-            ))}
-          </ul>
-
-			)
-		}
+export default class TodoList extends React.Component {
+	constructor(props){
+			super(props);
+			this.truth = source.getTruth(['todos'], this);
 	}
+	
+	render(){
+		return (
+			<ul id="todo-list">
+				{this.truth.todos.map(
+					(todo, index)=> (
+						<li
+							key={todo.id}
+						>
+						{todo.text}
+						</li>
+					)
+				)}
+			</ul>
+
+		)
+	}
+}
 ```
-> Note that `getTruth` returns an object of getters, so `Object.assign` and the *object rest spread operator* will not work with the returned object.
+> Note that `getTruth` returns an object of getters, so `Object.assign` and the *object rest spread operator* will not work with the returned object.  
 
 ## Writers
-> This is great, but `truth`  is constantly changing. In Ethos, truth is updated with `writers`.
+> This is great, but `truth`  is constantly changing. In Ethos, truth is updated with `writers`.  
 
 The formatting for `writers` isn't much different than `truth`, but there's a bit more going on here:
 ``` javascript
 	// ./source.js
 	
-	import Ethos, { Source } from 'ethos'
+	import { Source } from 'ethos'
 
   let count = 0;
   function id(){
@@ -152,7 +152,7 @@ The formatting for `writers` isn't much different than `truth`, but there's a bi
 ```
 
 ### What’s `this`?
-> To avoid some pains of other systems, Ethos binds your `writers` to a snapshot of your `Source`. This makes it possible for writer functions to accept as many arguments as necessary. 
+> To avoid some pains of other systems, Ethos binds your `writers` to a snapshot of your `Source`. This makes it possible for writer functions to accept as many arguments as necessary.   
 
 - `this.truth` is your `Source`’s `truth` property, there for you to access and change it as you please.
 - `this.writers` are your `Source`’s writers. 
@@ -186,16 +186,16 @@ The easiest way to invoke a writer is to access it  in `source.writers`.
 		render(){
 			return (
 
-          <ul id="todo-list">
-            {this.truth.todos.map((todo, index)=> (
-              <li
-             		key={todo.id}
-					onClick={()=>this.completeTodo(index)}
-              >
+			<ul id="todo-list">
+				{this.truth.todos.map((todo, index)=> (
+					<li
+						key={todo.id}
+						onClick={()=>this.completeTodo(index)}
+					>
 					{todo.text}
 				</li>
-            ))}
-          </ul>
+				))}
+			</ul>
 
 			)
 		}
@@ -217,7 +217,7 @@ Hence,  `addTodo`  above could be rewritten as
 Both methods provide the same functionality. Using `write`, however, limits you to one argument.  The latter method may look a bit more familiar if you’re coming from flux/redux.
 
 ## Runners
-> Writers have one catch: they update your components synchronously. This means asynchronous changes ( made via  API calls, WebSockets, or `setTimeout`s, etc. ) may not have updated `truth` by the time Ethos updates your components.
+> Writers have one catch: they update your components synchronously. This means asynchronous changes ( made via  API calls, WebSockets, or `setTimeout`s, etc. ) may not have updated `truth` by the time Ethos updates your components.  
 
 To solve this problem, we have `runners`. Ethos `runners` handle all asynchronous activity in the `source`. Put simply, `runners` *run* other functions.
 
@@ -225,7 +225,7 @@ You may have noticed we already have a `time` property in the `truth` of our exa
 ``` javascript
 	// ./source.js
 	
-	import Ethos, { Source } from 'ethos'
+	import { Source } from 'ethos'
 	
 	const source = {
 		truth:{
@@ -255,7 +255,7 @@ You may have noticed we already have a `time` property in the `truth` of our exa
 ```
 
 ### What’s `this`?
-> Similarly to `writers`, `runners` are bound to a snapshot representing functionality in your `Source`. Runners’ snapshot is slightly different, however.
+> Similarly to `writers`, `runners` are bound to a snapshot representing functionality in your `Source`. Runners’ snapshot is slightly different, however.  
 
 - `this.writers` are your `Source`’s writers. 
 - `this.runners` are your `Source`’s runners. 
@@ -263,17 +263,17 @@ You may have noticed we already have a `time` property in the `truth` of our exa
 - `this.run` is your `Source`’s  `run` method. ( we’ll get to this in a second )
 
 #### Truth & Done
-> While runners also have access to `truth` , any mutations made to truth will not sync without use of the `done` method.
+> While runners also have access to `truth` , any mutations made to truth will not sync without use of the `done` method.  
 *  `this.truth` is your `Source`’s `truth`.
 *  `this.done` is a method which tells your source that you mutated `truth`, and the `source` needs to update accordingly. 
 
 This enables you to avoid writing tedious `writers` which simply change a value. 
 
 See an example of `this.done()` in **Examples** below.
-> `this.done` is an experimental feature and disabling it will be possible with the upcoming `strict` mode.
+> `this.done` is an experimental feature and disabling it will be possible with the upcoming `strict` mode.  
 
 #### Promise Wrappers
-> Ethos also gives you the ability to wrap any runner in an ES6 Promise using `this.async()`, `this.resolve()` and `this.reject()`.
+> Ethos also gives you the ability to wrap any runner in an ES6 Promise using `this.async()`, `this.resolve()` and `this.reject()`.  
 Promises can get quite verbose. Promise wrappers aim to fix that. 
 * `this.async()`  is the method which initializes the Promise wrapper. It must be invoked *outside* your asynchronous code.
 * `this.resolve()` is the Promise’s *resolve* function.
@@ -317,10 +317,10 @@ Mutating truth with `this.done()`
 ```
 
 Using **Promise Wrappers**
-> This example handles a simple GET request to the [Giphy API](https://github.com/Giphy/GiphyAPI)  using the popular HTTP client, [Axios](https://github.com/mzabriskie/axios).
+> This example handles a simple GET request to the [Giphy API](https://github.com/Giphy/GiphyAPI)  using the popular HTTP client, [Axios](https://github.com/mzabriskie/axios).  
 ``` javascript 
-		...
-  	runners:{
+	...
+	runners:{
 		getRandomGifUrl(){
         /*
         1. Initialize the Promise wrapper *outside* the
@@ -367,7 +367,7 @@ Watchers are defined like so:
 ``` javascript
 	// ./source.js
 	
-	import Ethos, { Source } from 'ethos'
+	import { Source } from 'ethos'
 	
 	const source = {
 		truth:{
@@ -394,7 +394,7 @@ Watchers are defined like so:
 ```
 
 ### What’s `this`?
-> `this` for `watchers` is the same as `this` for `writers`
+> `this` for `watchers` is the same as `this` for `writers`  
 - `this.truth` is your `Source`’s truth property. 
 	- It’s not suggested that you directly mutate `truth` from watchers.
 - `this.writers` are your `Source`’s writers. 
@@ -403,7 +403,7 @@ Watchers are defined like so:
 - `this.run` is your `Source`’s `run` method.
 
 ## Thoughts
-> Thoughts observe one or more pieces of `truth`, combine it with some custom logic, and return a new piece of `truth`. When a piece of `truth` a thought is observing changes, the thought will update its value.
+> Thoughts observe one or more pieces of `truth`, combine it with some custom logic, and return a new piece of `truth`. When a piece of `truth` a thought is observing changes, the thought will update its value.  
 Let’s say we have two numbers, `a` and `b`, in our `truth`.
 
 ``` javascript
@@ -460,7 +460,7 @@ but if we changed `truth.a`…
 ```
 
 ### What’s `this`?
-> `this` for `thoughts` is the same as `this` for `writers`
+> `this` for `thoughts` is the same as `this` for `writers`  
 - `this.truth` is your `Source`’s truth property. 
 	- It’s not suggested that you directly mutate `truth` from `thoughts`
 - `this.writers` are your `Source`’s writers. 
@@ -469,24 +469,27 @@ but if we changed `truth.a`…
 - `this.run` is your `Source`’s `run` method.
 
 ## Founder Function
-> In an Ethos Source, the `founder` function is a function that is instantly invoked once the source is built. It can be used to initialize a lot of source functionality an avoid contaminating your view layer with data logic.
+> In an Ethos Source, the `founder` function is a function that is instantly invoked once the store is built. It can be used to initialize a lot of store functionality an avoid contaminating your view layer with store logic.  
 
 Example:
 ```javascript 
 ...
-      truth:{...},
-      writers:{...},
+
+    truth:{...},
+    writers:{...},
 		runners:{...},
-      thoughts:{...},
+    thoughts:{...},
+
 		founder(){
 			this.runners.authenticateUser();
 			this.runners.openSockets();
 		}
+
 ...
 ```
 
 ### What’s `this`?
-> `this` for the `founder` function is the same as `this` for `writers`
+> `this` for the `founder` function is the same as `this` for `writers`  
 - `this.truth` is your `Source`’s truth property. 
 	- It’s not suggested that you directly mutate `truth` from the `founder` function.
 - `this.writers` are your `Source`’s writers. 
@@ -495,7 +498,7 @@ Example:
 - `this.run` is your `Source`’s `run` method.
 
 ## Children
-> To organize your sources, Ethos has `children`. Each child is its own independent source.
+> To organize your sources, Ethos has `children`. Each child is its own independent source.  
 
 Child sources are defined like so:
 ``` javascript
@@ -509,28 +512,31 @@ const source = {
 
 		children:{
 		// children are named by the property they are nested under
-			users:{ // a source just for your users
-				truth:{
-					currentUser:{
-						email:'',
-						firstname:'',
-						lastname:'',
-						id:''
-					}
-				},
-				thoughts:{
-					fullName(){
-						let user = this.truth.currentUser;
-						return user.firstname + user.lastname;
-					}
-				},
-				children:{ // nested children
-					friends:{...}
-				}
-			}
-		}
+				users:{ // a source just for your users
 
-	}
+						truth:{
+							currentUser:{
+								email:'',
+								firstname:'',
+								lastname:'',
+								id:''
+							}
+						},
+
+						thoughts:{
+							fullName(){
+								let user = this.truth.currentUser;
+								return user.firstname + user.lastname;
+							}
+						},
+						
+						children:{ // nested children
+							friends:{...}
+						}
+
+				}
+		}
+}
 
 export default new Source(source);
 ```
@@ -543,13 +549,13 @@ Access children on a source like so:
 
 Access nested children one of two ways:
 1. chaining `child` methods
-``` javascript
-source.child('users').child('friends')
-```
+	``` javascript
+	source.child('users').child('friends')
+	```
 2. Query string
-``` javascript
-source.child('users.friends')
-```
+	``` javascript
+	source.child('users.friends')
+	```
 
 Runners, writers, thoughts, watchers and the founder function all have additional properties on  `this`  to access parent and child sources.
 * `this.child()` is the source’s child method, same as above.
